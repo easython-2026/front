@@ -1,0 +1,297 @@
+
+/* 관리자 공통 레이아웃 */
+
+.admin-shell {
+    --admin-coral: #F56B4A;
+    --admin-dark: #2D2928;
+  
+    display: flex;
+    min-height: 100vh;
+    background: #F8F6F4;
+    color: #292524;
+  }
+  
+  .admin-shell,
+  .admin-shell * {
+    box-sizing: border-box;
+  }
+  
+  /* 사이드바 */
+  
+  .admin-shell__sidebar {
+    width: 280px;
+    flex: 0 0 280px;
+    min-height: 100vh;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  
+    background: var(--admin-dark);
+    color: #FFFFFF;
+  
+    display: flex;
+    flex-direction: column;
+    padding: 30px 18px;
+  }
+  
+  .admin-shell__brand {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 0 0 65px;
+  }
+  
+  .admin-shell__logo {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+  
+    background: var(--admin-coral);
+    border-radius: 14px;
+    color: white;
+    font-size: 24px;
+    font-weight: 800;
+  }
+  
+  .admin-shell__brand-text strong {
+    display: block;
+    margin-top: 5px;
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -1px;
+  }
+  
+  .admin-shell__brand-text > span {
+    display: block;
+    margin-top: 12px;
+    color: #AFA5A1;
+    font-size: 13px;
+  }
+  
+  /* 내비게이션 */
+  
+  .admin-shell__nav {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .admin-shell__nav-link {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-height: 56px;
+    padding: 15px 20px;
+  
+    color: #C6BDB8;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 15px;
+  
+    transition: background 0.2s, color 0.2s;
+  }
+  
+  .admin-shell__nav-link:hover,
+  .admin-shell__nav-link.is-active {
+    background: #4B403C;
+    color: #FFFFFF;
+  }
+  
+  .admin-shell__nav-icon {
+    width: 24px;
+    text-align: center;
+    font-size: 25px;
+    line-height: 1;
+  }
+  
+  /* 하단 관리자 정보 */
+  
+  .admin-shell__sidebar-bottom {
+    margin-top: auto;
+    padding-top: 23px;
+    border-top: 1px solid #514945;
+  }
+  
+  .admin-shell__profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 25px;
+  }
+  
+  .admin-shell__avatar {
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: #5B504B;
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+  }
+  
+  .admin-shell__profile-text {
+    min-width: 0;
+  }
+  
+  .admin-shell__profile-text strong {
+    display: block;
+    font-size: 14px;
+  }
+  
+  .admin-shell__profile-text span {
+    display: block;
+    margin-top: 6px;
+    font-size: 12px;
+    color: #AFA5A1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  .admin-shell__logout {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 13px 9px;
+  
+    background: none;
+    border: none;
+    color: #B8AEAA;
+    cursor: pointer;
+    text-align: left;
+    font-size: 15px;
+  }
+  
+  .admin-shell__logout:hover {
+    color: #FFFFFF;
+  }
+  
+  .admin-shell__logout span {
+    font-size: 25px;
+  }
+  
+  /* 작업 영역 */
+  
+  .admin-shell__workspace {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .admin-shell__header {
+    min-height: 112px;
+    padding: 25px 44px;
+    background: #FFFFFF;
+    border-bottom: 1px solid #EAE5E1;
+  
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+  
+  .admin-shell__header-title > span {
+    color: #8F8580;
+    font-size: 13px;
+  }
+  
+  .admin-shell__header-title h1 {
+    margin: 7px 0 0;
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -1px;
+  }
+  
+  .admin-shell__header-right {
+    display: flex;
+    align-items: center;
+    gap: 17px;
+  }
+  
+  .admin-shell__agency {
+    color: #756A64;
+    font-size: 14px;
+  }
+  
+  .admin-shell__header-avatar {
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: #F9EEEA;
+    color: #B34B32;
+  
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+  }
+  
+  .admin-shell__main {
+    padding: 36px 44px;
+    width: 100%;
+    min-width: 0;
+  }
+  
+  /* 반응형 */
+  
+  @media (max-width: 1100px) {
+    .admin-shell__sidebar {
+      width: 230px;
+      flex-basis: 230px;
+    }
+  
+    .admin-shell__header,
+    .admin-shell__main {
+      padding-left: 24px;
+      padding-right: 24px;
+    }
+  }
+  
+  @media (max-width: 720px) {
+    .admin-shell__sidebar {
+      width: 76px;
+      flex-basis: 76px;
+      padding: 20px 8px;
+    }
+  
+    .admin-shell__brand {
+      justify-content: center;
+      padding-bottom: 40px;
+    }
+  
+    .admin-shell__brand-text,
+    .admin-shell__profile-text,
+    .admin-shell__logout {
+      display: none;
+    }
+  
+    .admin-shell__profile {
+      justify-content: center;
+    }
+  
+    .admin-shell__nav-link {
+      justify-content: center;
+      padding: 14px 8px;
+    }
+  
+    .admin-shell__nav-link > span:last-child {
+      display: none;
+    }
+  
+    .admin-shell__agency {
+      display: none;
+    }
+  
+    .admin-shell__header-title h1 {
+      font-size: 19px;
+    }
+  
+    .admin-shell__main {
+      padding: 24px 14px;
+    }
+  }
+  

@@ -3,68 +3,70 @@ import {
   Routes,
   Route,
   Navigate,
-  Outlet,
-  Link,
 } from "react-router";
 
-function Page({ title }) {
+// 관리자 페이지
+import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminCases from "./pages/AdminCases";
+import AdminCaseDetail from "./pages/AdminCaseDetail";
+
+// 관리자 공통 컴포넌트
+import AdminLayout from "./components/AdminLayout";
+import AdminProtectedRoute from "./components/AdminProtectedRoute";
+
+// 404 페이지
+function NotFound() {
   return (
     <main style={{ padding: 24 }}>
-      <h1>{title}</h1>
-      <Link to="/dashboard">대시보드로 이동</Link>
+      <h2>404 - 페이지를 찾을 수 없습니다.</h2>
+      <p>요청하신 페이지가 존재하지 않습니다.</p>
     </main>
-  );
-}
-
-function AdminLayout() {
-  return (
-    <div>
-      <header style={{ padding: 20 }}>
-        <h2>이지톤 상담기관 관리자</h2>
-        <nav style={{ display: "flex", gap: 20 }}>
-          <Link to="/dashboard">대시보드</Link>
-          <Link to="/cases">상담 사건 목록</Link>
-        </nav>
-      </header>
-
-      <Outlet />
-    </div>
   );
 }
 
 export default function App() {
   return (
     <Routes>
+      {/* 기본 경로 → 대시보드 */}
       <Route
         path="/"
-        element={<Navigate to="/login" replace />}
+        element={<Navigate to="/dashboard" replace />}
       />
 
+      {/* 관리자 로그인 */}
       <Route
         path="/login"
-        element={<Page title="관리자 로그인" />}
+        element={<AdminLogin />}
       />
 
-      <Route element={<AdminLayout />}>
-        <Route
-          path="/dashboard"
-          element={<Page title="상담 현황 대시보드" />}
-        />
+      {/* 관리자 로그인 필수 페이지 */}
+      <Route element={<AdminProtectedRoute />}>
+        <Route element={<AdminLayout />}>
+          {/* 관리자 대시보드 */}
+          <Route
+            path="/dashboard"
+            element={<AdminDashboard />}
+          />
 
-        <Route
-          path="/cases"
-          element={<Page title="동의 사건 목록" />}
-        />
+          {/* 상담 사건 목록 */}
+          <Route
+            path="/cases"
+            element={<AdminCases />}
+          />
 
-        <Route
-          path="/cases/:caseId"
-          element={<Page title="상담 사건 상세" />}
-        />
+          {/* 상담 사건 상세 */}
+          <Route
+            path="/cases/:caseId"
+            element={<AdminCaseDetail />}
+          />
+        </Route>
       </Route>
 
+      {/* 존재하지 않는 경로 */}
       <Route
         path="*"
-        element={<Page title="404 페이지 없음" />}
+        element={<NotFound />}
       />
     </Routes>
   );
