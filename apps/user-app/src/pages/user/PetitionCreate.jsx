@@ -869,6 +869,26 @@ export default function PetitionCreate() {
               )}
             </select>
 
+            <label htmlFor="pf-direct-comparison-id">
+              급여 비교 ID로 직접 찾기 (선택)
+            </label>
+            <input
+              id="pf-direct-comparison-id"
+              type="text"
+              value={selected}
+              placeholder="급여 비교 상세 화면의 ID 입력"
+              onChange={(event) => {
+                setSelected(event.target.value.trim());
+                setDetailError("");
+                setCreateError("");
+              }}
+              disabled={listLoading || creating}
+            />
+            <p className="pf-muted">
+              불일치 결과가 목록에 보이지 않더라도 비교 ID를 알고 있다면
+              직접 입력할 수 있어요. 서버 상세 조회로 불일치 상태를 다시 확인합니다.
+            </p>
+
             {/* 급여 비교 목록 조회 오류 */}
             {listError && (
               <div

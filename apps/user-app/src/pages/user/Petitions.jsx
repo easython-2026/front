@@ -299,6 +299,8 @@ export default function Petitions() {
   const [error, setError] = useState(null);
 
   const [reload, setReload] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pageInfo, setPageInfo] = useState(null);
 
   // 기존 진정서 목록 API
   useEffect(() => {
@@ -308,11 +310,15 @@ export default function Petitions() {
     setError(null);
     setItems([]);
 
-    getComplaints()
+    // 첫 페이지는 기존 기본 API 규격을 유지합니다.
+    // 추가 페이지는 서버가 pageInfo를 제공한 경우에만 조회합니다.
+    getComplaints(page === 1 ? {} : { page, size: 20 })
       .then((response) => {
         if (!active) return;
 
         setItems(parseComplaints(response));
+        const payload = response?.data ?? response;
+        setPageInfo(payload?.pageInfo ?? payload?.pagination ?? null);
       })
       .catch((err) => {
         if (active) {
@@ -328,7 +334,7 @@ export default function Petitions() {
     return () => {
       active = false;
     };
-  }, [reload]);
+  }, [reload, page]);
 
   // 조회한 진정서들의 상태별 개수
   const counts = useMemo(
@@ -597,7 +603,7 @@ export default function Petitions() {
               )}
             </div>
 
-            {/* 빈 목록 */}
+            {/* 조회된 데이터에 서버 페이지 정보가 있을 때만 이동 */}
             {visible.length === 0 ? (
               <section className="pcl-message pcl-empty">
                 <span className="pcl-message-icon">
@@ -646,6 +652,36 @@ export default function Petitions() {
               </div>
             )}
           </>
+        )}
+
+        {!loading && !error && pageInfo && (
+          <div className="pcl-pagination" style={{
+            display: "flex", alignItems: "center", justifyContent: "center",
+            gap: 16, marginTop: 6,
+          }}>
+            <button
+              className="pcl-outline-button"
+              style={{ width: "auto", minHeight: 38 }}
+              type="button"
+              disabled={page <= 1}
+              onClick={() => setPage((v) => v - 1)}
+            >이전</button>
+            <span style={{ fontSize: 12 }}>
+              {page}{Number.isSafeInteger(Number(pageInfo.totalPages))
+                ? ` / ${pageInfo.totalPages}` : ""}
+            </span>
+            <button
+              className="pcl-outline-button"
+              style={{ width: "auto", minHeight: 38 }}
+              type="button"
+              disabled={
+                pageInfo.hasNext !== true &&
+                !(Number.isSafeInteger(Number(pageInfo.totalPages)) &&
+                  Number(pageInfo.totalPages) > page)
+              }
+              onClick={() => setPage((v) => v + 1)}
+            >다음</button>
+          </div>
         )}
 
         {/* ====================================

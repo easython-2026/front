@@ -272,8 +272,28 @@ export default function Evidences() {
               item.fileUrl ?? item.url
             );
 
-            const recordId = item.recordId;
             const group = category(type);
+            const detailId =
+              group === "contract"
+                ? item.contractId
+                : group === "salary"
+                ? item.statementId
+                : group === "attendance"
+                ? item.attendanceId ?? item.recordId
+                : null;
+            const detailLink =
+              detailId == null ? null :
+              group === "contract"
+                ? `/contracts/${encodeURIComponent(detailId)}`
+                : group === "salary"
+                ? `/salary/statements/${encodeURIComponent(detailId)}`
+                : group === "attendance"
+                ? `/attendance/${encodeURIComponent(detailId)}`
+                : null;
+            const detailLabel =
+              group === "contract" ? "계약서 상세 보기" :
+              group === "salary" ? "급여명세서 상세 보기" :
+              "근무기록 상세 보기";
 
             return (
               <article
@@ -345,7 +365,7 @@ export default function Evidences() {
 
                     {item.hash && (
                       <details>
-                        <summary>증거 해시 확인</summary>
+                        <summary>서버에 저장된 해시 보기</summary>
                         <code className="efx-hash">
                           {item.hash}
                         </code>
@@ -363,19 +383,17 @@ export default function Evidences() {
                       </a>
                     )}
 
-                    {recordId != null && (
+                    {detailLink && (
                       <Link
                         className="efx-outline-button"
-                        to={`/attendance/${encodeURIComponent(
-                          recordId
-                        )}`}
+                        to={detailLink}
                       >
-                        근무기록 상세 보기
+                        {detailLabel}
                       </Link>
                     )}
 
                     {!fileUrl &&
-                      recordId == null && (
+                      !detailLink && (
                         <p className="efx-muted">
                           서버가 개별 파일 링크를
                           제공하지 않았습니다.

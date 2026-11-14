@@ -1,16 +1,16 @@
-
 import {
-  useEffect,
+  useCallback,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
 
 import { AuthContext } from "./auth-context";
-import { setAccessTokenProvider } from "../api/client";
 import {
-  login as loginApi,
-  logout as logoutApi,
-} from "../api/auth";
+  setAccessTokenProvider,
+  setUnauthorizedHandler,
+} from "../api/client";
+import { login as loginApi, logout as logoutApi } from "../api/auth";
 
 const LOCAL_TOKEN_KEY = "easython.accessToken";
 const SESSION_TOKEN_KEY = "easython.sessionAccessToken";
@@ -27,92 +27,85 @@ function readStoredToken() {
   }
 }
 
-function extractAccessToken(response) {
-  const token =
-    response?.accessToken ??
-    response?.data?.accessToken;
-
-  if (typeof token !== "string" || !token) {
-    throw new Error(
-      "로그인 응답에서 Access Token을 찾지 못했습니다. " +
-      "백엔드 응답 형식을 확인해 주세요."
-    );
+function clearStoredToken() {
+  try {
+    window.localStorage.removeItem(LOCAL_TOKEN_KEY);
+    window.sessionStorage.removeItem(SESSION_TOKEN_KEY);
+  } catch {
+    // 브라우저 저장소가 차단된 상황에서도 메모리 상태는 정리한다.
   }
+}
 
+function extractAccessToken(response) {
+  const token = response?.accessToken ?? response?.data?.accessToken;
+  if (typeof token !== "string" || !token.trim()) {
+    throw new Error("로그인 응답에서 Access Token을 찾지 못했습니다.");
+  }
   return token;
 }
 
 export default function AuthProvider({ children }) {
-  const [accessToken, setAccessToken] =
-    useState(readStoredToken);
-
+  const [accessToken, setAccessToken] = useState(readStoredToken);
   const tokenRef = useRef(accessToken);
 
-  useEffect(() => {
-    setAccessTokenProvider(() => tokenRef.current);
-
-    return () => {
-      setAccessTokenProvider(() => null);
-    };
+  const clearSession = useCallback(() => {
+    tokenRef.current = null;
+    clearStoredToken();
+    setAccessToken(null);
   }, []);
 
-  async function signIn(
-    credentials,
-    { remember = false } = {}
-  ) {
+  // 자식 페이지의 일반 useEffect(API 요청)보다 먼저 토큰 제공자를 등록한다.
+  useLayoutEffect(() => {
+    setAccessTokenProvider(() => tokenRef.current);
+    setUnauthorizedHandler((failedToken) => {
+      // 이전 요청의 401이 새 로그인 세션을 삭제하는 것을 방지한다.
+      if (tokenRef.current && tokenRef.current === failedToken) {
+        clearSession();
+      }
+    });
+    return () => {
+      setAccessTokenProvider(() => null);
+      setUnauthorizedHandler(null);
+    };
+  }, [clearSession]);
+
+  async function signIn(credentials, { remember = false } = {}) {
     const response = await loginApi(credentials);
     const token = extractAccessToken(response);
 
     tokenRef.current = token;
-    setAccessToken(token);
+    clearStoredToken();
 
     try {
-      window.localStorage.removeItem(LOCAL_TOKEN_KEY);
-      window.sessionStorage.removeItem(SESSION_TOKEN_KEY);
-
       if (remember) {
-        window.localStorage.setItem(
-          LOCAL_TOKEN_KEY,
-          token
-        );
+        window.localStorage.setItem(LOCAL_TOKEN_KEY, token);
       } else {
-        window.sessionStorage.setItem(
-          SESSION_TOKEN_KEY,
-          token
-        );
+        window.sessionStorage.setItem(SESSION_TOKEN_KEY, token);
       }
     } catch {
-      // 저장소가 차단되어도 메모리 로그인은 유지
+      // 저장소가 차단되어도 현재 탭에서는 로그인 유지.
     }
-
+    setAccessToken(token);
     return response;
   }
 
   async function signOut() {
     try {
-      await logoutApi();
+      if (tokenRef.current) await logoutApi();
     } finally {
-      tokenRef.current = null;
-      setAccessToken(null);
-
-      try {
-        window.localStorage.removeItem(LOCAL_TOKEN_KEY);
-        window.sessionStorage.removeItem(SESSION_TOKEN_KEY);
-      } catch {
-        // 저장소 접근 실패 예외 처리
-      }
+      clearSession();
     }
   }
 
-  const value = {
-    accessToken,
-    isAuthenticated: Boolean(accessToken),
-    signIn,
-    signOut,
-  };
-
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider
+      value={{
+        accessToken,
+        isAuthenticated: Boolean(accessToken),
+        signIn,
+        signOut,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

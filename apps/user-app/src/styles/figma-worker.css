@@ -686,67 +686,14 @@ body {
     sans-serif;
 }
 
-/* ==========================================
-   하위 기능 페이지 기본 레이아웃
-========================================== */
-
-.eth-worker-nested > main {
-  max-width: 390px !important;
-  width: 100%;
-
-  padding: 20px !important;
-
-  margin: 0 auto !important;
-  overflow-wrap: anywhere;
-}
-
-.eth-worker-nested > main h1 {
-  font-size: 23px;
-  line-height: 1.35;
-  letter-spacing: -0.04em;
-}
-
-.eth-worker-nested > main h2 {
-  font-size: 18px;
-  letter-spacing: -0.03em;
-}
-
-.eth-worker-nested > main input,
-.eth-worker-nested > main select,
-.eth-worker-nested > main textarea {
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-.eth-worker-nested > main button {
-  cursor: pointer;
-}
-
-.eth-worker-nested > main a {
-  color: #d95234;
-}
-
-.eth-worker-nested > main pre {
-  max-width: 100%;
-  overflow-x: auto;
-}
-
-.eth-worker-nested > main table {
-  display: block;
-  max-width: 100%;
-  overflow-x: auto;
-}
-
-.eth-worker-nested > main section {
-  max-width: 100%;
-  min-width: 0;
-}
-
-.eth-worker-nested > main img {
-  max-width: 100%;
-  height: auto;
-}
-
-.eth-worker-nested {
-  padding-bottom: 0;
+/* 하위 페이지는 각 페이지의 전용 CSS가 여백과 제목을 관리합니다. */
+.eth-worker-shell > .ef-page,
+.eth-worker-shell > .efin-page,
+.eth-worker-shell > .pfs-screen,
+.eth-worker-shell > .pcl-page,
+.eth-worker-shell > .pf-screen,
+.eth-worker-shell > .efx-screen {
+  max-width: 390px;
+  margin-left: auto;
+  margin-right: auto;
 }

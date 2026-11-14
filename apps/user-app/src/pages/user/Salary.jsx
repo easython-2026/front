@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 
 import {
   getSalaryComparison,
@@ -83,9 +83,20 @@ const itemLabels = {
 
 export default function Salary() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const queryMonth = searchParams.get("month");
+  const validMonth = (value) => /^\d{4}-(0[1-9]|1[0-2])$/.test(value ?? "");
 
   // 월 및 서버 데이터
-  const [month, setMonth] = useState(currentMonth);
+  const [month, setMonth] = useState(() =>
+    validMonth(queryMonth) ? queryMonth : currentMonth()
+  );
+
+  useEffect(() => {
+    if (validMonth(queryMonth) && queryMonth !== month) {
+      setMonth(queryMonth);
+    }
+  }, [queryMonth]);
   const [overview, setOverview] = useState(null);
   const [detail, setDetail] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -225,6 +236,7 @@ export default function Salary() {
     }
 
     setMonth(nextMonth);
+    setSearchParams({ month: nextMonth }, { replace: true });
     setError("");
     setMessage("");
   }
@@ -486,6 +498,11 @@ export default function Salary() {
   const hasDifference =
     difference != null &&
     Number(difference) !== 0;
+
+  const comparisonId = comparison?.comparisonId ?? comparison?.id;
+  const verifiedMismatch =
+    isCompared && comparison?.status === "MISMATCH" &&
+    comparisonId != null && String(comparisonId) !== "";
 
   const uncertainCount = items.filter(
     (item) =>
@@ -905,21 +922,34 @@ export default function Salary() {
             상담기관에 도움을 요청할 수 있어요.
           </p>
 
-          <Link
-            className="efin-main-button"
-            to="/petitions/new"
-          >
-            <FeatureIcon name="file" />
-            진정서 초안 발급
-          </Link>
+          {verifiedMismatch ? (
+            <Link
+              className="efin-main-button"
+              to={`/petitions/new?comparisonId=${encodeURIComponent(comparisonId)}`}
+            >
+              <FeatureIcon name="file" />
+              불일치 결과로 진정서 만들기
+            </Link>
+          ) : (
+            <FeatureNotice tone="info">
+              진정서 생성은 서버가 불일치(MISMATCH)로 판단한
+              급여 비교 결과에서만 가능합니다.
+            </FeatureNotice>
+          )}
 
-          <Link
-            className="efin-outline-button"
-            to="/consultations/new"
-          >
-            <FeatureIcon name="file" />
-            상담 연결
-          </Link>
+          {isCompared && comparisonId != null ? (
+            <Link
+              className="efin-outline-button"
+              to={`/consultations/new?comparisonId=${encodeURIComponent(comparisonId)}`}
+            >
+              <FeatureIcon name="file" />
+              이 비교 결과로 상담 연결
+            </Link>
+          ) : (
+            <p className="efin-muted">
+              상담 신청은 먼저 급여 비교 결과를 만든 뒤 이용할 수 있어요.
+            </p>
+          )}
         </section>
       </main>
 

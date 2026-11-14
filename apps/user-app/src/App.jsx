@@ -9,6 +9,7 @@ import {
 import UserLayout from "./layouts/UserLayout";
 import PagePlaceholder from "./components/PagePlaceholder";
 import ProtectedRoute from "./components/ProtectedRoute";
+import useAuth from "./hooks/useAuth";
 
 // 인증
 import Login from "./pages/auth/Login";
@@ -66,6 +67,11 @@ const page = (title) => (
   <PagePlaceholder title={title} />
 );
 
+function RootRedirect() {
+  const { isAuthenticated } = useAuth();
+  return <Navigate to={isAuthenticated ? "/home" : "/onboarding"} replace />;
+}
+
 export default function App() {
   return (
     <Routes>
@@ -76,7 +82,7 @@ export default function App() {
       <Route
         path="/"
         element={
-          <Navigate to="/onboarding" replace />
+          <RootRedirect />
         }
       />
 

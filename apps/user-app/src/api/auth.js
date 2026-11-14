@@ -1,50 +1,34 @@
-// 회원가입 & 로그인 & 토큰
-
-
 import { apiRequest } from "./client";
 
-// 회원가입
-export async function signup(data) {
-  return apiRequest("auth", "signup", {
+// 공개 인증 API는 과거 세션의 Bearer Token을 전송하지 않는다.
+export const signup = (data) =>
+  apiRequest("auth", "signup", { body: data, token: null });
+
+export const login = (data) =>
+  apiRequest("auth", "login", { body: data, token: null });
+
+export const logout = (options = {}) =>
+  apiRequest("auth", "logout", options);
+
+// 리프레시 토큰 전달 방식(쿠키/본문)이 백엔드와 일치해야만 사용한다.
+export const refreshToken = (options = {}) =>
+  apiRequest("auth", "refresh", {
+    ...options,
+    token: null,
+    credentials: options.credentials ?? "include",
+  });
+
+export const checkEmail = (query) =>
+  apiRequest("auth", "checkEmail", { query, token: null });
+
+export const requestPasswordReset = (data) =>
+  apiRequest("auth", "requestPasswordReset", {
     body: data,
+    token: null,
   });
-}
 
-// 로그인
-export async function login(data) {
-  return apiRequest("auth", "login", {
+export const resetPassword = (data) =>
+  apiRequest("auth", "resetPassword", {
     body: data,
+    token: null,
   });
-}
-
-// 로그아웃
-export async function logout(options = {}) {
-  return apiRequest("auth", "logout", options);
-}
-
-// 액세스 토큰 재발급
-export async function refreshToken(options = {}) {
-  return apiRequest("auth", "refresh", options);
-}
-
-// 이메일 중복 확인
-// query 객체의 정확한 필드명은 상세 명세 기준
-export async function checkEmail(query) {
-  return apiRequest("auth", "checkEmail", {
-    query,
-  });
-}
-
-// 비밀번호 재설정 요청
-export async function requestPasswordReset(data) {
-  return apiRequest("auth", "requestPasswordReset", {
-    body: data,
-  });
-}
-
-// 비밀번호 재설정
-export async function resetPassword(data) {
-  return apiRequest("auth", "resetPassword", {
-    body: data,
-  });
-}

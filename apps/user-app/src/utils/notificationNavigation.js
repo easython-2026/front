@@ -9,7 +9,9 @@ export function getNotificationPath(notification) {
 
   switch (type) {
     case "PAYDAY":
-      return "/salary";
+      return month && /^\d{4}-(0[1-9]|1[0-2])$/.test(month)
+        ? `/salary?month=${encodeURIComponent(month)}`
+        : "/salary";
 
     case "MISSING_RECORD":
       return "/attendance/history";

@@ -122,7 +122,7 @@ export default function ContractReviewFigma() {
     finally { setBusy(false); }
   }
 
-  return <div className="ef-page"><FeatureHeader title="근로계약서 확인" back="/contracts"/><main className="ef-content">
+  return <div className="ef-page"><FeatureHeader title="근로계약서 확인" back="/contracts/list"/><main className="ef-content">
     {loading && <section className="ef-card ef-loading"><span className="ef-spinner"/><h2>AI가 계약서를 읽고 있어요</h2><p>임금, 휴게, 공제 조건을 확인하는 중입니다.</p></section>}
     {error && <FeatureNotice tone="error">{error}</FeatureNotice>}
     {message && <FeatureNotice tone="success">{message}</FeatureNotice>}
@@ -141,6 +141,6 @@ export default function ContractReviewFigma() {
       {!confirmed && <section className="ef-card ef-reanalyze"><label>재분석 언어 (선택)<input value={language} placeholder={contract.translation?.language ?? "예: ko, en, vi"} onChange={(e) => setLanguage(e.target.value)}/></label><FeatureButton variant="secondary" disabled={!editable || Boolean(changed)} onClick={reanalyze}><FeatureIcon name="refresh" size={17}/> AI 재분석</FeatureButton></section>}
       <FeatureNotice tone="warning">참고용 초안이며 최종 판단은 노무사·노동청 확인이 필요합니다.</FeatureNotice>
     </>}
-    <Link className="ef-text-link" to="/contracts">계약서 목록으로 돌아가기</Link>
+    <Link className="ef-text-link" to="/contracts/list">계약서 목록으로 돌아가기</Link>
   </main></div>;
 }

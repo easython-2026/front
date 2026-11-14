@@ -116,34 +116,40 @@ export default function ConsultationDetail() {
 
     async function load() {
       try {
-        const [detailResponse, messageData] =
-          await Promise.all([
-            apiRequest(
-              "consultation",
-              "getDetail",
-              {
-                params: { consultationId },
-                signal: controller.signal,
-              }
-            ),
+        const [detailResult, messageResult] =
+          await Promise.allSettled([
+            apiRequest("consultation", "getDetail", {
+              params: { consultationId },
+              signal: controller.signal,
+            }),
             loadMessages(controller.signal),
           ]);
 
         if (!active) return;
 
-        setDetail(unwrap(detailResponse));
+        if (detailResult.status === "fulfilled") {
+          setDetail(unwrap(detailResult.value));
+          setError("");
+        } else {
+          setDetail(null);
+          setError(getErrorMessage(detailResult.reason));
+        }
 
-        setMessages(
-          [...messageData.messages].sort((a, b) =>
-            String(a.createdAt ?? "").localeCompare(
-              String(b.createdAt ?? "")
+        if (messageResult.status === "fulfilled") {
+          const messageData = messageResult.value;
+          setMessages(
+            [...messageData.messages].sort((a, b) =>
+              String(a.createdAt ?? "").localeCompare(
+                String(b.createdAt ?? "")
+              )
             )
-          )
-        );
-
-        setPageInfo(messageData.pageInfo ?? null);
-        setError("");
-        setMessageError("");
+          );
+          setPageInfo(messageData.pageInfo ?? null);
+          setMessageError("");
+        } else {
+          setMessages([]);
+          setMessageError(getErrorMessage(messageResult.reason));
+        }
       } catch (err) {
         if (!active || err?.name === "AbortError") return;
 

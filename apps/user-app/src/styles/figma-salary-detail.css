@@ -1,0 +1,35 @@
+/* 일한만큼 — 급여 상세 카드 (기존 ef-page 디자인 재사용) */
+.sd-page {
+  background: #fffaf7;
+  color: #292524;
+  min-height: 100dvh;
+}
+.sd-content { gap: 15px; }
+.sd-refresh {
+  align-self: flex-end;
+  background: transparent;
+  border: 0;
+  color: #b8432c;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+}
+.sd-summary,.sd-section { display: flex; flex-direction: column; gap: 12px; }
+.sd-summary-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.sd-summary h2,.sd-section h2 { margin: 0; font-size: 16px; }
+.sd-section h3 { margin: 6px 0 0; font-size: 13px; }
+.sd-section ul { padding-left: 20px; margin: 0; color: #78716c; font-size: 11px; line-height: 1.7; }
+.sd-info-line { display: flex; gap: 8px; justify-content: space-between; align-items: flex-start; padding-bottom: 10px; border-bottom: 1px solid #ede7e3; font-size: 11px; }
+.sd-info-line span { color: #78716c; flex-shrink: 0; }
+.sd-info-line b { text-align: right; word-break: break-word; }
+.sd-info-line.sd-emphasis b { font-size: 19px; color: #b8432c; }
+.sd-muted { color: #78716c; font-size: 11px; line-height: 1.7; margin: 0; }
+.sd-items { display: flex; flex-direction: column; gap: 10px; }
+.sd-item { background: #fffaf7; border: 1px solid #f2e8e4; border-radius: 12px; padding: 13px; display: flex; flex-direction: column; gap: 10px; }
+.sd-item > strong { font-size: 12px; }
+.sd-item .sd-info-line { padding-bottom: 6px; }
+.sd-actions a { min-height: 48px; padding: 12px; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 7px; font-size: 12px; font-weight: 750; text-decoration: none; }
+.sd-primary { background: #f56b4a; color: white !important; }
+.sd-secondary { border: 1px solid #f2c3b3; background: white; color: #b8432c !important; }

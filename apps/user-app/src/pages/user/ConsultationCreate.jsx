@@ -103,7 +103,7 @@ export default function ConsultationCreate() {
           const response = await apiRequest(
             "report",
             "getEvidences",
-            { query: { page, size: 100 } }
+            { query: { page, size: 20 } }
           );
 
           if (!active) return;

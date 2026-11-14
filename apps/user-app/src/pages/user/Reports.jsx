@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 
 import {
   getMonthlyReport,
@@ -105,8 +105,21 @@ export default function Reports() {
   // 탭 및 조회 월
   // =====================================
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedMonth = searchParams.get("month");
+  const validMonth = (value) => /^\d{4}-(0[1-9]|1[0-2])$/.test(value ?? "");
+
   const [tab, setTab] = useState("work");
-  const [month, setMonth] = useState(currentMonth);
+  const [month, setMonth] = useState(() =>
+    validMonth(requestedMonth) ? requestedMonth : currentMonth()
+  );
+
+  useEffect(() => {
+    if (validMonth(requestedMonth) && requestedMonth !== month) {
+      setMonth(requestedMonth);
+      setSelectedEvidence(null);
+    }
+  }, [requestedMonth]);
 
   const [report, setReport] = useState(null);
   const [evidences, setEvidences] = useState([]);
@@ -183,37 +196,43 @@ export default function Reports() {
     setEvidenceLoading(true);
     setEvidenceError("");
 
-    getEvidences({
-      month,
-      page: 1,
-      size: 100,
-    })
-      .then((response) => {
-        if (!active) return;
+    async function loadEvidencePages() {
+      try {
+        const collected = [];
+        let page = 1;
+        let totalPages = 1;
 
-        const list = extractEvidences(
-          response
-        );
+        do {
+          const response = await getEvidences({ month, page, size: 20 });
+          if (!active) return;
 
-        if (!list) {
-          throw new Error(
-            "증거 목록 응답 배열을 확인해 주세요."
-          );
-        }
+          const list = extractEvidences(response);
+          if (!list) {
+            throw new Error("증거 목록 응답 배열을 확인해 주세요.");
+          }
+          collected.push(...list);
 
-        setEvidences(list);
-      })
-      .catch((err) => {
+          const payload = unwrap(response);
+          const pages = Number(payload?.pageInfo?.totalPages ?? 1);
+          if (!Number.isSafeInteger(pages) || pages < 1) {
+            throw new Error("증거 목록 페이지 정보를 확인할 수 없습니다.");
+          }
+          totalPages = pages;
+          page += 1;
+        } while (page <= totalPages && active);
+
+        if (active) setEvidences(collected);
+      } catch (err) {
         if (active) {
           setEvidenceError(errorText(err));
           setEvidences([]);
         }
-      })
-      .finally(() => {
-        if (active) {
-          setEvidenceLoading(false);
-        }
-      });
+      } finally {
+        if (active) setEvidenceLoading(false);
+      }
+    }
+
+    loadEvidencePages();
 
     return () => {
       active = false;
@@ -282,6 +301,7 @@ export default function Reports() {
       /^\d{4}-(0[1-9]|1[0-2])$/.test(value)
     ) {
       setMonth(value);
+      setSearchParams({ month: value }, { replace: true });
       setSelectedEvidence(null);
     }
   }

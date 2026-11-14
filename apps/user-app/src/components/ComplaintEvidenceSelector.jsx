@@ -78,7 +78,7 @@ export default function ComplaintEvidenceSelector({
               "report",
               "getEvidences",
               {
-                query: { page, size: 100 },
+                query: { page, size: 20 },
               }
             )
           );
