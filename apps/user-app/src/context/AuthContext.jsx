@@ -7,14 +7,26 @@ import {
 
 import { AuthContext } from "./auth-context";
 import { setAccessTokenProvider } from "../api/client";
-
 import {
   login as loginApi,
   logout as logoutApi,
 } from "../api/auth";
 
-// 로그인 응답에서 Access Token 추출
-// 실제 응답 명세 확인 후 수정할 부분
+const LOCAL_TOKEN_KEY = "easython.accessToken";
+const SESSION_TOKEN_KEY = "easython.sessionAccessToken";
+
+function readStoredToken() {
+  try {
+    return (
+      window.sessionStorage.getItem(SESSION_TOKEN_KEY) ||
+      window.localStorage.getItem(LOCAL_TOKEN_KEY) ||
+      null
+    );
+  } catch {
+    return null;
+  }
+}
+
 function extractAccessToken(response) {
   const token =
     response?.accessToken ??
@@ -31,10 +43,10 @@ function extractAccessToken(response) {
 }
 
 export default function AuthProvider({ children }) {
-  const [accessToken, setAccessToken] = useState(null);
+  const [accessToken, setAccessToken] =
+    useState(readStoredToken);
 
-  // API 요청에서 최신 토큰을 참조하기 위한 Ref
-  const tokenRef = useRef(null);
+  const tokenRef = useRef(accessToken);
 
   useEffect(() => {
     setAccessTokenProvider(() => tokenRef.current);
@@ -44,27 +56,53 @@ export default function AuthProvider({ children }) {
     };
   }, []);
 
-  // 로그인
-  const signIn = async (credentials) => {
+  async function signIn(
+    credentials,
+    { remember = false } = {}
+  ) {
     const response = await loginApi(credentials);
-
     const token = extractAccessToken(response);
 
     tokenRef.current = token;
     setAccessToken(token);
 
-    return response;
-  };
+    try {
+      window.localStorage.removeItem(LOCAL_TOKEN_KEY);
+      window.sessionStorage.removeItem(SESSION_TOKEN_KEY);
 
-  // 로그아웃
-  const signOut = async () => {
+      if (remember) {
+        window.localStorage.setItem(
+          LOCAL_TOKEN_KEY,
+          token
+        );
+      } else {
+        window.sessionStorage.setItem(
+          SESSION_TOKEN_KEY,
+          token
+        );
+      }
+    } catch {
+      // 저장소가 차단되어도 메모리 로그인은 유지
+    }
+
+    return response;
+  }
+
+  async function signOut() {
     try {
       await logoutApi();
     } finally {
       tokenRef.current = null;
       setAccessToken(null);
+
+      try {
+        window.localStorage.removeItem(LOCAL_TOKEN_KEY);
+        window.sessionStorage.removeItem(SESSION_TOKEN_KEY);
+      } catch {
+        // 저장소 접근 실패 예외 처리
+      }
     }
-  };
+  }
 
   const value = {
     accessToken,

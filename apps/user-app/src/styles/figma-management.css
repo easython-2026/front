@@ -1,0 +1,788 @@
+
+/* ==========================================
+   일한만큼 - 개인정보·권한·증거·알림
+   Figma 계열 모바일 UI
+
+   Main: #F56B4A
+   Background: #FFFAF7
+   Width: 390px
+========================================== */
+
+.efx-screen {
+  --efx-main: #f56b4a;
+  --efx-bg: #fffaf7;
+  --efx-ink: #292524;
+  --efx-muted: #78716c;
+  --efx-line: #ede7e3;
+
+  width: 100%;
+  max-width: 390px;
+  min-height: 100dvh;
+  margin: 0 auto;
+
+  color: var(--efx-ink);
+  background: var(--efx-bg);
+
+  font-family:
+    "Noto Sans KR",
+    system-ui,
+    -apple-system,
+    sans-serif;
+}
+
+.efx-screen *,
+.efx-screen *::before,
+.efx-screen *::after {
+  box-sizing: border-box;
+}
+
+.efx-screen h1,
+.efx-screen h2,
+.efx-screen h3,
+.efx-screen p {
+  margin: 0;
+}
+
+.efx-screen a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.efx-screen button,
+.efx-screen input,
+.efx-screen textarea {
+  font: inherit;
+}
+
+.efx-screen button {
+  cursor: pointer;
+}
+
+.efx-screen button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.efx-screen svg {
+  flex-shrink: 0;
+}
+
+/* ==========================================
+   헤더
+========================================== */
+
+.efx-header {
+  height: 65px;
+  padding: 10px 18px;
+
+  display: grid;
+  grid-template-columns:
+    35px minmax(0, 1fr) 35px;
+
+  align-items: center;
+  gap: 10px;
+
+  border-bottom: 1px solid var(--efx-line);
+  background: rgba(255, 250, 247, 0.96);
+}
+
+.efx-header > a,
+.efx-header > button {
+  display: grid;
+  place-items: center;
+
+  width: 34px;
+  height: 36px;
+  padding: 0;
+
+  border: 0;
+  background: transparent;
+}
+
+.efx-header strong {
+  font-size: 16px;
+  letter-spacing: -0.03em;
+}
+
+/* ==========================================
+   콘텐츠 및 제목
+========================================== */
+
+.efx-content {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+
+  padding: 24px 18px 36px;
+}
+
+.efx-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.efx-eyebrow {
+  font-size: 10px;
+  color: #b8432c;
+  letter-spacing: 0.12em;
+  font-weight: 800;
+}
+
+.efx-heading h1 {
+  font-size: 25px;
+  line-height: 1.28;
+  letter-spacing: -0.05em;
+}
+
+.efx-heading p:last-child {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--efx-muted);
+}
+
+/* ==========================================
+   공통 카드
+========================================== */
+
+.efx-card {
+  padding: 16px;
+  border: 1px solid var(--efx-line);
+  border-radius: 17px;
+  background: #fff;
+
+  box-shadow:
+    0 3px 16px rgba(70, 45, 35, 0.035);
+
+  min-width: 0;
+}
+
+.efx-card h2 {
+  font-size: 14px;
+}
+
+.efx-card h3 {
+  font-size: 12px;
+}
+
+.efx-card p {
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.efx-muted {
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--efx-muted);
+}
+
+.efx-meta {
+  margin-top: 9px !important;
+  color: var(--efx-muted);
+  font-size: 10px !important;
+}
+
+.efx-center {
+  text-align: center;
+}
+
+.efx-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.efx-section-head h2 {
+  font-size: 15px;
+}
+
+.efx-section-head h3 {
+  font-size: 13px;
+}
+
+/* ==========================================
+   배지
+========================================== */
+
+.efx-badge {
+  padding: 5px 9px;
+  border-radius: 100px;
+
+  background: #f5f3f1;
+  color: #78716c;
+
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.efx-badge-success {
+  background: #ecfdf3;
+  color: #15803d;
+}
+
+.efx-badge-warning {
+  background: #fff7df;
+  color: #a16207;
+}
+
+.efx-badge-info {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+/* ==========================================
+   상태 메시지
+========================================== */
+
+.efx-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+
+  padding: 12px 13px;
+  border-radius: 13px;
+
+  background: #eff6ff;
+  color: #2563eb;
+
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.efx-notice span {
+  flex: 1;
+  min-width: 0;
+}
+
+.efx-notice-error {
+  background: #fff0f0;
+  color: #dc2626;
+}
+
+.efx-notice-warning {
+  background: #fff8e7;
+  color: #98620f;
+}
+
+.efx-notice-success {
+  background: #ecfdf3;
+  color: #15803d;
+}
+
+/* ==========================================
+   버튼
+========================================== */
+
+.efx-main-button,
+.efx-outline-button {
+  min-height: 48px;
+  padding: 11px 13px;
+
+  border-radius: 13px;
+  width: 100%;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+
+  text-align: center;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.efx-main-button {
+  background: var(--efx-main);
+  border: 1px solid var(--efx-main);
+  color: white !important;
+}
+
+.efx-outline-button {
+  background: white;
+  border: 1px solid #efcbbf;
+  color: #b8432c !important;
+}
+
+.efx-danger-outline {
+  color: #dc2626 !important;
+  border-color: #f7c6c6;
+}
+
+/* ==========================================
+   화면 이동 카드
+========================================== */
+
+.efx-link-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+
+  padding: 14px;
+  border-radius: 15px;
+
+  border: 1px solid var(--efx-line);
+  background: white;
+}
+
+.efx-link-row > span:nth-last-child(2) {
+  flex: 1;
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.efx-link-row b {
+  font-size: 12px;
+}
+
+.efx-link-row small {
+  font-size: 10px;
+  color: var(--efx-muted);
+}
+
+/* ==========================================
+   아이콘 박스
+========================================== */
+
+.efx-small-icon {
+  display: grid;
+  place-items: center;
+
+  flex: 0 0 39px;
+  width: 39px;
+  height: 39px;
+
+  border-radius: 11px;
+
+  background: #fff0eb;
+  color: var(--efx-main);
+}
+
+.efx-big-icon {
+  display: grid;
+  place-items: center;
+
+  flex: 0 0 61px;
+  width: 61px;
+  height: 61px;
+
+  border-radius: 19px;
+
+  background: #fff0eb;
+  color: var(--efx-main);
+}
+
+/* ==========================================
+   강조 카드
+========================================== */
+
+.efx-hero-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+
+  background: linear-gradient(
+    140deg,
+    #fff,
+    #fff1eb
+  );
+}
+
+.efx-hero-card b {
+  font-size: 14px;
+}
+
+.efx-hero-card > p {
+  color: var(--efx-muted);
+}
+
+.efx-card > .efx-section-head + .efx-muted {
+  margin: 10px 0 14px;
+}
+
+/* ==========================================
+   삭제 요청 폼
+========================================== */
+
+.efx-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.efx-screen textarea {
+  width: 100%;
+  padding: 10px;
+
+  border: 1px solid #ded8d4;
+  border-radius: 11px;
+
+  resize: vertical;
+  font-size: 12px;
+}
+
+.efx-check-list {
+  margin-top: 10px;
+}
+
+.efx-check-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+
+  padding: 12px 0;
+
+  border-bottom: 1px solid var(--efx-line);
+}
+
+.efx-check-row:last-child {
+  border-bottom: 0;
+}
+
+.efx-check-row input {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--efx-main);
+}
+
+.efx-check-row span {
+  flex: 1;
+
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.efx-check-row b {
+  font-size: 12px;
+}
+
+.efx-check-row small {
+  color: var(--efx-muted);
+  font-size: 10px;
+}
+
+.efx-success-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 13px;
+}
+
+.efx-success-card > svg {
+  color: #15803d;
+}
+
+/* ==========================================
+   정보 행 및 공유 내역
+========================================== */
+
+.efx-info-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+
+  padding: 10px 0;
+  border-bottom: 1px solid var(--efx-line);
+
+  font-size: 11px;
+}
+
+.efx-info-line span {
+  color: var(--efx-muted);
+}
+
+.efx-info-line b {
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.efx-info-line:last-child {
+  border-bottom: 0;
+}
+
+.efx-share-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.efx-subtle-link {
+  align-self: flex-start;
+
+  color: #b8432c !important;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* ==========================================
+   빈 목록
+========================================== */
+
+.efx-empty {
+  min-height: 150px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 9px;
+
+  color: var(--efx-muted);
+  text-align: center;
+}
+
+.efx-empty b {
+  font-size: 12px;
+  color: var(--efx-ink);
+}
+
+.efx-empty svg {
+  color: var(--efx-main);
+}
+
+/* ==========================================
+   목록 필터
+========================================== */
+
+.efx-filter-row {
+  display: flex;
+  gap: 6px;
+
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.efx-filter-row button {
+  flex: 1 0 auto;
+
+  border-radius: 10px;
+  padding: 9px 10px;
+
+  border: 1px solid var(--efx-line);
+  background: white;
+
+  color: var(--efx-muted);
+
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.efx-filter-row button.active {
+  color: #b8432c;
+  background: #fff0eb;
+  border-color: #f4c9ba;
+}
+
+/* ==========================================
+   증거 목록 카드
+========================================== */
+
+.efx-evidence-card {
+  padding: 11px 12px;
+}
+
+.efx-evidence-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  padding: 0;
+  border: 0;
+
+  text-align: left;
+  background: transparent;
+}
+
+.efx-evidence-toggle > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.efx-evidence-toggle b {
+  font-size: 12px;
+}
+
+.efx-evidence-toggle small {
+  color: var(--efx-muted);
+  font-size: 10px;
+}
+
+.efx-evidence-detail {
+  margin-top: 12px;
+  padding-top: 10px;
+
+  border-top: 1px solid var(--efx-line);
+
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.efx-evidence-detail .efx-info-line {
+  padding: 5px 0;
+}
+
+.efx-evidence-detail details {
+  font-size: 10px;
+}
+
+.efx-hash {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 9px;
+  padding: 10px;
+
+  background: #f7f5f3;
+}
+
+/* ==========================================
+   서버 페이지 이동
+========================================== */
+
+.efx-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+.efx-pager button {
+  border: 1px solid var(--efx-line);
+  background: white;
+
+  border-radius: 10px;
+  padding: 9px 15px;
+
+  font-size: 11px;
+}
+
+.efx-pager span {
+  font-size: 12px;
+}
+
+/* ==========================================
+   알림 요약 카드
+========================================== */
+
+.efx-notification-count {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 19px 20px;
+
+  background: linear-gradient(
+    140deg,
+    #4a312a,
+    #251f1d
+  );
+
+  color: white;
+  border-radius: 19px;
+}
+
+.efx-notification-count > div {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.efx-notification-count > div span {
+  font-size: 11px;
+  color: #d9c8c0;
+}
+
+.efx-notification-count strong {
+  font-size: 31px;
+  color: #ffb49f;
+}
+
+.efx-notification-count strong small {
+  font-size: 11px;
+  margin-left: 4px;
+  color: #d9c8c0;
+}
+
+/* ==========================================
+   알림 목록
+========================================== */
+
+.efx-alert-card {
+  display: flex;
+  gap: 12px;
+}
+
+.efx-alert-card.efx-unread {
+  background: #fff4ef;
+  border-color: #f3c7b8;
+}
+
+.efx-alert-main {
+  flex: 1;
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.efx-alert-main h2 {
+  font-size: 13px;
+}
+
+.efx-alert-main p {
+  font-size: 11px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.efx-alert-main > small {
+  font-size: 10px;
+  color: var(--efx-muted);
+}
+
+.efx-overline {
+  font-size: 10px;
+  color: #b8432c;
+  font-weight: 700;
+}
+
+.efx-alert-action {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 3px;
+
+  border: 0;
+  background: transparent;
+
+  color: #b8432c;
+
+  font-weight: 700;
+  font-size: 11px;
+
+  padding: 3px 0;
+}
+
+/* ==========================================
+   포커스 접근성
+========================================== */
+
+.efx-screen :focus-visible {
+  outline: 2px solid var(--efx-main);
+  outline-offset: 2px;
+}

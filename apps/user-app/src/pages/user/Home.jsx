@@ -1,50 +1,53 @@
 
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { apiRequest } from "../../api/client";
 
-const WORK_LABELS = {
+import { apiRequest } from "../../api/client";
+import BrandLogo from "../../components/BrandLogo";
+
+const labels = {
   NOT_STARTED: "미출근",
   WORKING: "근무 중",
   FINISHED: "퇴근 완료",
 };
 
-const CONSULTATION_LABELS = {
+const consultationLabels = {
   RECEIVED: "접수 완료",
   REVIEWING: "검토 중",
-  INFO_REQUESTED: "추가 자료 요청",
+  INFO_REQUESTED: "자료 요청",
   REFERRED: "기관 연계",
   CLOSED: "상담 종료",
 };
 
+function unwrap(value) {
+  return value?.data ?? value;
+}
+
 function currentMonth() {
-  // 서버의 급여 귀속 월과 맞추기 위해 한국 시간 사용
-  return new Intl.DateTimeFormat("en-CA", {
+  const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "Asia/Seoul",
     year: "numeric",
     month: "2-digit",
-  }).format(new Date());
+  }).formatToParts(new Date());
+
+  const year = parts.find(
+    (part) => part.type === "year"
+  )?.value;
+
+  const month = parts.find(
+    (part) => part.type === "month"
+  )?.value;
+
+  return `${year}-${month}`;
 }
 
-function unwrap(response) {
-  return response?.data ?? response;
-}
-
-function money(value) {
-  if (value == null || !Number.isFinite(Number(value))) {
-    return "미제공";
-  }
-
-  return `${Number(value).toLocaleString("ko-KR")}원`;
-}
-
-function formatTime(value) {
+function time(value) {
   if (!value) return "기록 없음";
 
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    return "시간 확인 불가";
+    return "확인 불가";
   }
 
   return new Intl.DateTimeFormat("ko-KR", {
@@ -55,58 +58,144 @@ function formatTime(value) {
   }).format(date);
 }
 
-function formatMinutes(value) {
-  if (value == null) return "미제공";
+function minutes(value) {
+  if (
+    value == null ||
+    !Number.isFinite(Number(value))
+  ) {
+    return "입력 없음";
+  }
 
-  const minutes = Number(value);
+  const n = Math.max(0, Number(value));
 
-  if (!Number.isFinite(minutes) || minutes < 0) {
+  return `${Math.floor(n / 60)}시간 ${Math.floor(n % 60)}분`;
+}
+
+function money(value) {
+  if (
+    value == null ||
+    !Number.isFinite(Number(value))
+  ) {
     return "미제공";
   }
 
-  const hours = Math.floor(minutes / 60);
-  const remaining = Math.floor(minutes % 60);
-
-  return `${hours}시간 ${remaining}분`;
+  return `${Number(value).toLocaleString("ko-KR")}원`;
 }
 
-function getErrorMessage(error) {
-  if (error?.status === 401) {
-    return "로그인이 필요합니다.";
-  }
-
-  return error?.message ?? "정보를 불러오지 못했습니다.";
+function errorMessage(error) {
+  return error?.status === 401
+    ? "로그인이 필요합니다."
+    : error?.message ?? "정보를 불러오지 못했습니다.";
 }
 
-function DashboardCard({ title, children, to, linkText }) {
+// ============================================
+// 홈 화면 아이콘
+// ============================================
+
+function Icon({ name, size = 20 }) {
+  const symbols = {
+    clock: (
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v5l3 2" />
+      </>
+    ),
+
+    check: (
+      <path d="m5 12 4 4L19 6" />
+    ),
+
+    camera: (
+      <>
+        <path d="M4 7h4l2-2h4l2 2h4v12H4z" />
+        <circle cx="12" cy="13" r="4" />
+      </>
+    ),
+
+    shield: (
+      <>
+        <path d="M12 2 4 5v6c0 5 3.4 9 8 11 4.6-2 8-6 8-11V5z" />
+        <path d="m8 12 3 3 5-6" />
+      </>
+    ),
+
+    file: (
+      <>
+        <path d="M6 2h8l4 4v16H6z" />
+        <path d="M14 2v5h4M9 12h6M9 16h6" />
+      </>
+    ),
+
+    chevron: (
+      <path d="m9 5 7 7-7 7" />
+    ),
+
+    bell: (
+      <>
+        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 8h18s-3-1-3-8" />
+        <path d="M10 20h4" />
+      </>
+    ),
+
+    refresh: (
+      <>
+        <path d="M20 7v5h-5M4 17v-5h5" />
+        <path d="M18.4 9A7 7 0 0 0 6.5 6.5L4 9M5.6 15a7 7 0 0 0 11.9 2.5L20 15" />
+      </>
+    ),
+  };
+
   return (
-    <section
-      style={{
-        padding: 20,
-        border: "1px solid #e5e7eb",
-        borderRadius: 14,
-        background: "#fff",
-      }}
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
     >
-      <h2 style={{
-        fontSize: 19,
-        marginTop: 0,
-      }}>
-        {title}
-      </h2>
+      {symbols[name]}
+    </svg>
+  );
+}
+
+// ============================================
+// 홈 공통 카드
+// ============================================
+
+function Panel({
+  title,
+  subtitle,
+  children,
+  to,
+}) {
+  return (
+    <section className="eth-home-panel">
+      <div className="eth-panel-heading">
+        <div>
+          {subtitle && <p>{subtitle}</p>}
+          <h2>{title}</h2>
+        </div>
+
+        {to && (
+          <Link to={to}>
+            자세히
+            <Icon name="chevron" size={14} />
+          </Link>
+        )}
+      </div>
 
       {children}
-
-      {to && (
-        <p style={{ marginBottom: 0, marginTop: 16 }}>
-          <Link to={to}>
-            {linkText ?? "자세히 보기"}
-          </Link>
-        </p>
-      )}
     </section>
   );
 }
+
+// ============================================
+// 홈 화면
+// ============================================
 
 export default function Home() {
   const month = currentMonth();
@@ -116,8 +205,13 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [reloadKey, setReloadKey] = useState(0);
 
+  // ==========================================
+  // 기존 홈 API 요청 유지
+  // ==========================================
+
   useEffect(() => {
     let active = true;
+
     const controller = new AbortController();
 
     const requests = {
@@ -156,39 +250,36 @@ export default function Home() {
         }),
     };
 
-    async function loadDashboard() {
+    async function load() {
       const entries = Object.entries(requests);
 
-      try {
-        const results = await Promise.allSettled(
-          entries.map(([, request]) => request())
-        );
+      const results = await Promise.allSettled(
+        entries.map(([, call]) => call())
+      );
 
-        if (!active) return;
+      if (!active) return;
 
-        const nextData = {};
-        const nextErrors = {};
+      const nextData = {};
+      const nextErrors = {};
 
-        results.forEach((result, index) => {
-          const key = entries[index][0];
+      results.forEach((result, index) => {
+        const key = entries[index][0];
 
-          if (result.status === "fulfilled") {
-            nextData[key] = unwrap(result.value);
-          } else {
-            nextErrors[key] = getErrorMessage(
-              result.reason
-            );
-          }
-        });
+        if (result.status === "fulfilled") {
+          nextData[key] = unwrap(result.value);
+        } else {
+          nextErrors[key] = errorMessage(
+            result.reason
+          );
+        }
+      });
 
-        setData(nextData);
-        setErrors(nextErrors);
-      } finally {
-        if (active) setLoading(false);
-      }
+      setData(nextData);
+      setErrors(nextErrors);
+      setLoading(false);
     }
 
-    loadDashboard();
+    load();
 
     return () => {
       active = false;
@@ -196,24 +287,43 @@ export default function Home() {
     };
   }, [month, reloadKey]);
 
-  function refresh() {
-    setLoading(true);
-    setReloadKey((previous) => previous + 1);
-  }
+  // ==========================================
+  // 출퇴근 상태
+  // ==========================================
 
-  const user = data.user;
   const today = data.attendance;
-  const salary = data.salary;
+  const workStatus = today?.workStatus;
 
-  const contracts = Array.isArray(data.contracts?.contracts)
-    ? data.contracts.contracts
-    : [];
+  const canIn =
+    today?.hasWorkplace === true &&
+    workStatus === "NOT_STARTED" &&
+    today?.nextAction === "CLOCK_IN";
 
-  const consultations = Array.isArray(
+  const canOut =
+    workStatus === "WORKING" &&
+    today?.nextAction === "CLOCK_OUT";
+
+  const inProgress = workStatus === "WORKING";
+  const done = workStatus === "FINISHED";
+
+  // ==========================================
+  // 계약서 / 상담 / 급여 / 알림
+  // ==========================================
+
+  const contract = Array.isArray(
+    data.contracts?.contracts
+  )
+    ? data.contracts.contracts[0]
+    : null;
+
+  const consultation = Array.isArray(
     data.consultations?.consultations
   )
-    ? data.consultations.consultations
-    : [];
+    ? data.consultations.consultations[0]
+    : null;
+
+  const salary = data.salary;
+  const comparison = salary?.comparison;
 
   const notifications = Array.isArray(
     data.notifications?.notifications
@@ -221,429 +331,468 @@ export default function Home() {
     ? data.notifications.notifications
     : [];
 
-  const latestContract = contracts[0] ?? null;
-  const latestConsultation = consultations[0] ?? null;
+  const unreadCount =
+    data.notifications?.unreadCount;
 
-  const unreadCount = data.notifications?.unreadCount;
-  const workStatus = today?.workStatus;
-  const nextAction = today?.nextAction;
-
-  const canClockIn =
-    today?.hasWorkplace === true &&
-    workStatus === "NOT_STARTED" &&
-    nextAction === "CLOCK_IN";
-
-  const canClockOut =
-    workStatus === "WORKING" &&
-    nextAction === "CLOCK_OUT";
-
-  const comparison = salary?.comparison;
+  const todayLabel =
+    today?.workDate ??
+    new Intl.DateTimeFormat("ko-KR", {
+      timeZone: "Asia/Seoul",
+      dateStyle: "full",
+    }).format(new Date());
 
   return (
-    <main
-      style={{
-        maxWidth: 850,
-        margin: "0 auto",
-        padding: 24,
-      }}
-    >
-      <header style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-        gap: 16,
-        marginBottom: 28,
-      }}>
-        <div>
-          <h1 style={{ marginBottom: 8 }}>
-            안녕하세요
-            {user?.name ? `, ${user.name}님` : ""}!
-          </h1>
+    <div className="eth-home">
 
-          <p style={{
-            marginTop: 0,
-            color: "#666",
-          }}>
-            오늘의 근무와 급여 정보를 확인해 보세요.
-          </p>
-        </div>
+      {/* ====================================
+          상단바 — 수정된 로고 적용
+      ==================================== */}
 
-        <Link to="/notifications">
-          알림
+      <header
+        className="eth-topbar"
+        aria-label="일한만큼 홈 상단바"
+      >
+        {/* 왼쪽: 심볼 SVG + 글자 SVG */}
+        <BrandLogo size="header" />
+
+        {/* 오른쪽: 기존 알림 버튼 유지 */}
+        <Link
+          to="/notifications"
+          className="eth-top-bell"
+          aria-label="알림 확인"
+        >
+          <Icon name="bell" />
+
           {typeof unreadCount === "number" &&
-            unreadCount > 0 &&
-            ` (${unreadCount})`}
+            unreadCount > 0 && (
+              <em>
+                {unreadCount > 99
+                  ? "99+"
+                  : unreadCount}
+              </em>
+            )}
         </Link>
       </header>
 
-      <button
-        type="button"
-        onClick={refresh}
-        disabled={loading}
-        style={{ marginBottom: 24 }}
-      >
-        {loading ? "새로고침 중..." : "전체 새로고침"}
-      </button>
+      <main className="eth-mobile-content">
 
-      {loading && (
-        <p role="status">
-          홈 정보를 불러오는 중...
-        </p>
-      )}
+        {/* ====================================
+            환영 메시지
+        ==================================== */}
 
-      {errors.user && (
-        <p role="alert">
-          사용자 정보: {errors.user}
-        </p>
-      )}
+        <section className="eth-welcome">
+          <p>{todayLabel}</p>
 
-      <div style={{
-        display: "grid",
-        gridTemplateColumns:
-          "repeat(auto-fit, minmax(260px, 1fr))",
-        gap: 16,
-      }}>
-        {/* 오늘 출퇴근 */}
-        <DashboardCard
-          title="오늘의 출퇴근"
-          to="/attendance/history"
-          linkText="근무기록 보기"
-        >
-          {errors.attendance ? (
-            <p role="alert">{errors.attendance}</p>
-          ) : today ? (
-            <>
-              <p>
-                근무일: {today.workDate ?? "미확인"}
-              </p>
+          <h1>
+            {inProgress
+              ? "지금 근무 중이에요"
+              : done
+              ? "오늘 기록을 완료했어요"
+              : "오늘도 안전하게\n기록을 시작해요"}
+          </h1>
 
-              <p>
-                상태:{" "}
-                <strong>
-                  {WORK_LABELS[workStatus] ??
-                    workStatus ??
-                    "미확인"}
-                </strong>
-              </p>
-
-              <p>
-                출근 시각:{" "}
-                {formatTime(today.record?.clockInAt)}
-              </p>
-
-              <p>
-                퇴근 시각:{" "}
-                {formatTime(today.record?.clockOutAt)}
-              </p>
-
-              <p>
-                실근무시간:{" "}
-                {formatMinutes(
-                  today.record?.workedMinutes
-                )}
-              </p>
-
-              {today.hasWorkplace === false && (
-                <div>
-                  <p>
-                    근무장소를 등록해야 GPS 출근
-                    인증을 진행할 수 있습니다.
-                  </p>
-
-                  <Link to="/workplace">
-                    근무장소 등록하기
-                  </Link>
-                </div>
-              )}
-
-              {canClockIn && (
-                <p>
-                  <Link to="/attendance/capture/CLOCK_IN">
-                    출근 인증 시작
-                  </Link>
-                </p>
-              )}
-
-              {canClockOut && (
-                <p>
-                  <Link to="/attendance/capture/CLOCK_OUT">
-                    퇴근 인증 시작
-                  </Link>
-                </p>
-              )}
-
-              {workStatus === "FINISHED" && (
-                <p>
-                  오늘의 출퇴근 기록이 완료되었습니다.
-                </p>
-              )}
-
-              {!canClockIn &&
-                !canClockOut &&
-                workStatus !== "FINISHED" &&
-                today.hasWorkplace !== false && (
-                  <p>
-                    현재 출퇴근 가능 상태를 확인해 주세요.
-                  </p>
-                )}
-            </>
-          ) : (
-            <p>출퇴근 정보를 조회 중입니다.</p>
+          {data.user?.name && (
+            <span>
+              {data.user.name}님,
+              반갑습니다.
+            </span>
           )}
-        </DashboardCard>
+        </section>
 
-        {/* 급여 */}
-        <DashboardCard
-          title={`${month} 급여`}
-          to="/salary"
-          linkText="급여 관리로 이동"
-        >
-          {errors.salary ? (
-            <p role="alert">{errors.salary}</p>
-          ) : salary ? (
-            <>
-              {salary.status === "NOT_SUBMITTED" && (
-                <p>
-                  이번 달 급여명세서 또는
-                  실제 수령액이 아직 등록되지 않았습니다.
-                </p>
-              )}
-
-              {salary.status === "READY" && (
-                <p>
-                  급여정보가 준비되었습니다.
-                  임금 비교를 실행해 보세요.
-                </p>
-              )}
-
-              {salary.status === "COMPARED" && (
-                <>
-                  <p>
-                    예상 임금:{" "}
-                    {money(comparison?.expectedAmount)}
-                  </p>
-
-                  <p>
-                    실제 지급액:{" "}
-                    {money(comparison?.actualAmount)}
-                  </p>
-
-                  <p>
-                    차이 금액:{" "}
-                    {money(comparison?.differenceAmount)}
-                  </p>
-
-                  {comparison?.id && (
-                    <Link
-                      to={`/salary/${encodeURIComponent(
-                        comparison.id
-                      )}`}
-                    >
-                      비교 결과 상세 보기
-                    </Link>
-                  )}
-                </>
-              )}
-
-              {![
-                "NOT_SUBMITTED",
-                "READY",
-                "COMPARED",
-              ].includes(salary.status) && (
-                <p>
-                  급여 상태: {salary.status ?? "미확인"}
-                </p>
-              )}
-            </>
-          ) : (
-            <p>급여 정보를 조회 중입니다.</p>
-          )}
-        </DashboardCard>
-
-        {/* 근로계약서 */}
-        <DashboardCard
-          title="근로계약서"
-          to="/contracts"
-          linkText="계약서 목록 보기"
-        >
-          {errors.contracts ? (
-            <p role="alert">{errors.contracts}</p>
-          ) : latestContract ? (
-            <>
-              <p>
-                최근 계약서:{" "}
-                {latestContract.employerName ??
-                  "사업장명 미확인"}
-              </p>
-
-              <p>
-                분석 상태:{" "}
-                {latestContract.status ?? "미확인"}
-              </p>
-
-              <p>
-                사용자 확정:{" "}
-                {latestContract.confirmed
-                  ? "확정 완료"
-                  : "확정 필요"}
-              </p>
-
-              {latestContract.checkCount != null && (
-                <p>
-                  확인 필요 항목:{" "}
-                  {latestContract.checkCount}개
-                </p>
-              )}
-
-              {latestContract.id && (
-                <Link
-                  to={`/contracts/${encodeURIComponent(
-                    latestContract.id
-                  )}`}
-                >
-                  최근 계약서 상세 보기
-                </Link>
-              )}
-            </>
-          ) : (
-            <p>등록된 근로계약서가 없습니다.</p>
-          )}
-        </DashboardCard>
-
-        {/* 상담 */}
-        <DashboardCard
-          title="상담 현황"
-          to="/consultations"
-          linkText="전체 상담 보기"
-        >
-          {errors.consultations ? (
-            <p role="alert">{errors.consultations}</p>
-          ) : latestConsultation ? (
-            <>
-              <p>
-                상담기관:{" "}
-                {latestConsultation.agencyName ??
-                  "기관명 미확인"}
-              </p>
-
-              <p>
-                진행 상태:{" "}
-                {CONSULTATION_LABELS[
-                  latestConsultation.status
-                ] ??
-                  latestConsultation.status ??
-                  "미확인"}
-              </p>
-
-              <p>
-                읽지 않은 메시지:{" "}
-                {latestConsultation.unreadMessages ?? 0}개
-              </p>
-
-              <p>
-                정보 공유:{" "}
-                {latestConsultation.shared
-                  ? "공유 중"
-                  : "공유되지 않음"}
-              </p>
-
-              {latestConsultation.id && (
-                <Link
-                  to={`/consultations/${encodeURIComponent(
-                    latestConsultation.id
-                  )}`}
-                >
-                  상담 상세 보기
-                </Link>
-              )}
-            </>
-          ) : (
-            <p>진행한 상담이 없습니다.</p>
-          )}
-        </DashboardCard>
-      </div>
-
-      {/* 최근 알림 */}
-      <section style={{ marginTop: 28 }}>
-        <h2>최근 알림</h2>
-
-        {errors.notifications && (
-          <p role="alert">
-            {errors.notifications}
+        {loading && (
+          <p
+            role="status"
+            className="eth-info-message"
+          >
+            홈 정보를 불러오는 중...
           </p>
         )}
 
-        {!errors.notifications &&
-          notifications.length === 0 && (
-            <p>최근 알림이 없습니다.</p>
+        {/* ====================================
+            출퇴근 카드
+        ==================================== */}
+
+        <section
+          className={`eth-clock-card ${
+            done ? "eth-clock-complete" : ""
+          }`}
+        >
+          <div className="eth-clock-ring">
+            <div>
+              <Icon
+                name={done ? "check" : "clock"}
+                size={31}
+              />
+
+              <b>
+                {inProgress
+                  ? time(today?.record?.clockInAt)
+                  : done
+                  ? time(today?.record?.clockOutAt)
+                  : "--:--"}
+              </b>
+
+              <span>
+                {labels[workStatus] ??
+                  "상태 확인 중"}
+              </span>
+            </div>
+          </div>
+
+          {/* 기록할 수 있는 상태에 따라 버튼 변경 */}
+
+          {errors.attendance ? (
+            <p
+              role="alert"
+              className="eth-error"
+            >
+              {errors.attendance}
+            </p>
+          ) : today?.hasWorkplace === false ? (
+            <Link
+              className="eth-primary-btn"
+              to="/workplace"
+            >
+              근무장소 먼저 등록하기
+            </Link>
+          ) : canIn ? (
+            <Link
+              className="eth-primary-btn"
+              to="/attendance/capture/clock-in"
+            >
+              <Icon name="camera" />
+              출근 기록하기
+            </Link>
+          ) : canOut ? (
+            <Link
+              className="eth-primary-btn"
+              to="/attendance/capture/clock-out"
+            >
+              <Icon name="camera" />
+              퇴근 기록하기
+            </Link>
+          ) : done ? (
+            <div className="eth-complete-line">
+              <Icon name="check" />
+              오늘의 출퇴근 기록 완료
+            </div>
+          ) : (
+            <Link
+              className="eth-secondary-btn"
+              to="/attendance"
+            >
+              출퇴근 상태 확인하기
+            </Link>
           )}
 
-        {!errors.notifications &&
-          notifications.map((item) => (
-            <article
-              key={item.id}
-              style={{
-                padding: 12,
-                borderBottom: "1px solid #ddd",
-              }}
+          <p className="eth-privacy-note">
+            <Icon name="shield" size={15} />
+            GPS 인증 성공 후에만 사진을
+            촬영할 수 있어요.
+          </p>
+        </section>
+
+        {/* ====================================
+            오늘 근무 현황
+        ==================================== */}
+
+        <Panel
+          title="기록된 시간"
+          subtitle="오늘 근무 현황"
+          to="/attendance/history"
+        >
+          <div className="eth-time-grid">
+            <div>
+              <span>출근</span>
+
+              <b>
+                {time(
+                  today?.record?.clockInAt
+                )}
+              </b>
+            </div>
+
+            <div>
+              <span>퇴근</span>
+
+              <b>
+                {time(
+                  today?.record?.clockOutAt
+                )}
+              </b>
+            </div>
+
+            <div>
+              <span>휴게</span>
+
+              <b>
+                {minutes(
+                  today?.record?.breakMinutes
+                )}
+              </b>
+            </div>
+
+            <div>
+              <span>실근무</span>
+
+              <b>
+                {minutes(
+                  today?.record?.workedMinutes
+                )}
+              </b>
+            </div>
+          </div>
+        </Panel>
+
+        {/* ====================================
+            근로계약서 바로가기
+        ==================================== */}
+
+        <Link
+          to="/contracts"
+          className="eth-contract-banner"
+        >
+          <span className="eth-icon-box">
+            <Icon name="file" />
+          </span>
+
+          <span>
+            <b>근로계약서 확인</b>
+
+            <small>
+              {errors.contracts
+                ? errors.contracts
+                : contract
+                ? `${
+                    contract.employerName ??
+                    "사업장 미확인"
+                  } · ${
+                    contract.confirmed
+                      ? "확정 완료"
+                      : "확정 필요"
+                  }`
+                : "원문과 번역을 함께 살펴보세요"}
+            </small>
+          </span>
+
+          <Icon name="chevron" />
+        </Link>
+
+        {/* ====================================
+            이번 달 급여 비교
+        ==================================== */}
+
+        <Panel
+          title="이번 달 급여 비교"
+          subtitle={month}
+          to="/salary"
+        >
+          {errors.salary ? (
+            <p
+              role="alert"
+              className="eth-error"
             >
+              {errors.salary}
+            </p>
+          ) : salary?.status === "COMPARED" ? (
+            <div className="eth-salary-grid">
+              <div>
+                <span>예상 임금</span>
+
+                <strong>
+                  {money(
+                    comparison?.expectedAmount
+                  )}
+                </strong>
+              </div>
+
+              <div>
+                <span>실제 지급</span>
+
+                <strong>
+                  {money(
+                    comparison?.actualAmount
+                  )}
+                </strong>
+              </div>
+
+              <div className="eth-salary-diff">
+                <span>차이 금액</span>
+
+                <strong>
+                  {money(
+                    comparison?.differenceAmount
+                  )}
+                </strong>
+              </div>
+            </div>
+          ) : (
+            <p className="eth-muted">
+              {salary?.status === "READY"
+                ? "급여정보가 준비되었어요. 비교를 실행해 보세요."
+                : salary?.status ===
+                  "NOT_SUBMITTED"
+                ? "급여명세서 또는 실제 수령액을 등록해 주세요."
+                : "급여 정보를 확인해 주세요."}
+            </p>
+          )}
+
+          {comparison?.id &&
+            salary?.status === "COMPARED" && (
+              <Link
+                className="eth-inline-link"
+                to={`/salary/${encodeURIComponent(
+                  comparison.id
+                )}`}
+              >
+                비교 결과 상세 보기 →
+              </Link>
+            )}
+        </Panel>
+
+        {/* ====================================
+            상담 현황
+        ==================================== */}
+
+        <Panel
+          title="상담 현황"
+          subtitle="기관 연결"
+          to="/consultations"
+        >
+          {errors.consultations ? (
+            <p
+              role="alert"
+              className="eth-error"
+            >
+              {errors.consultations}
+            </p>
+          ) : consultation ? (
+            <div className="eth-consult">
               <strong>
-                {item.title ?? "알림"}
+                {consultation.agencyName ??
+                  "상담기관"}
               </strong>
 
-              <p>{item.body ?? ""}</p>
+              <span className="eth-status-pill">
+                {consultationLabels[
+                  consultation.status
+                ] ??
+                  consultation.status ??
+                  "미확인"}
+              </span>
 
-              <small>
-                {item.read ? "읽음" : "읽지 않음"}
-              </small>
-            </article>
-          ))}
+              <p>
+                읽지 않은 메시지{" "}
+                {consultation.unreadMessages ??
+                  0}
+                개
+              </p>
 
-        <p>
-          <Link to="/notifications">
-            전체 알림 확인하기
-          </Link>
-        </p>
-      </section>
+              {consultation.id && (
+                <Link
+                  to={`/consultations/${encodeURIComponent(
+                    consultation.id
+                  )}`}
+                >
+                  상담 상세 보기 →
+                </Link>
+              )}
+            </div>
+          ) : (
+            <p className="eth-muted">
+              신청한 상담이 없어요.
+            </p>
+          )}
+        </Panel>
 
-      {/* 빠른 메뉴 */}
-      <section style={{ marginTop: 28 }}>
-        <h2>빠른 메뉴</h2>
+        {/* ====================================
+            최근 알림
+        ==================================== */}
 
-        <div style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 12,
-        }}>
-          <Link to="/attendance/history">
-            근무기록
-          </Link>
+        <Panel
+          title="최근 알림"
+          subtitle={
+            typeof unreadCount === "number"
+              ? `읽지 않은 알림 ${unreadCount}개`
+              : "내 알림"
+          }
+          to="/notifications"
+        >
+          {errors.notifications ? (
+            <p
+              role="alert"
+              className="eth-error"
+            >
+              {errors.notifications}
+            </p>
+          ) : notifications.length ? (
+            notifications.slice(0, 3).map(
+              (item) => (
+                <Link
+                  key={item.id}
+                  className="eth-notice"
+                  to="/notifications"
+                >
+                  <strong>
+                    {item.title ?? "알림"}
+                  </strong>
 
-          <Link to="/salary">
-            급여 비교
-          </Link>
+                  <span>
+                    {item.body ?? ""}
+                  </span>
+                </Link>
+              )
+            )
+          ) : (
+            <p className="eth-muted">
+              새로운 알림이 없어요.
+            </p>
+          )}
+        </Panel>
 
+        {/* ====================================
+            빠른 이동 버튼
+        ==================================== */}
+
+        <div className="eth-quick-links">
           <Link to="/reports">
             월별 리포트
-          </Link>
-
-          <Link to="/evidences">
-            증거 관리
           </Link>
 
           <Link to="/petitions">
             진정서
           </Link>
 
-          <Link to="/consultations">
-            상담
-          </Link>
-
-          <Link to="/profile">
-            내 정보
+          <Link to="/profile/consents">
+            개인정보 관리
           </Link>
         </div>
-      </section>
-    </main>
+
+        {/* ====================================
+            홈 데이터 새로고침
+        ==================================== */}
+
+        <button
+          type="button"
+          className="eth-refresh"
+          disabled={loading}
+          onClick={() => {
+            setLoading(true);
+            setReloadKey(
+              (value) => value + 1
+            );
+          }}
+        >
+          <Icon
+            name="refresh"
+            size={17}
+          />
+
+          {loading
+            ? "새로고침 중"
+            : "정보 새로고침"}
+        </button>
+      </main>
+    </div>
   );
 }

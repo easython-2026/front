@@ -13,17 +13,19 @@ import ProtectedRoute from "./components/ProtectedRoute";
 // 인증
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
+import Onboarding from "./pages/auth/Onboarding";
+import ForgotPassword from "./pages/auth/ForgotPassword";
 
 // 홈 및 출퇴근
 import Attendance from "./pages/user/Attendance";
 import AttendanceCapture from "./pages/user/AttendanceCapture";
 import AttendanceHistory from "./pages/user/AttendanceHistory";
+import AttendanceDetail from "./pages/user/AttendanceDetail";
 
 // 근로계약서
 import Contracts from "./pages/user/Contracts";
 import ContractUpload from "./pages/user/ContractUpload";
-import ContractDetail from "./pages/user/ContractDetail";
-import ContractReview from "./pages/user/ContractReview";
+import ContractReviewFigma from "./pages/user/ContractReviewFigma";
 
 // 급여 비교
 import Salary from "./pages/user/Salary";
@@ -50,13 +52,16 @@ import Notifications from "./pages/user/Notifications";
 
 // 내 정보
 import PrivacySettings from "./pages/user/PrivacySettings";
+import PermissionSettings from "./pages/user/PermissionSettings";
+import DataDeletion from "./pages/user/DataDeletion";
 import Profile from "./pages/user/Profile";
 import Workplace from "./pages/user/Workplace";
+import BusinessInfo from "./pages/user/BusinessInfo";
 
 // 홈
 import Home from "./pages/user/Home";
 
-// Figma UI 완성 전 임시 화면
+// 아직 Figma UI가 없는 임시 화면
 const page = (title) => (
   <PagePlaceholder title={title} />
 );
@@ -77,7 +82,7 @@ export default function App() {
 
       <Route
         path="/onboarding"
-        element={page("온보딩")}
+        element={<Onboarding />}
       />
 
       <Route
@@ -92,7 +97,7 @@ export default function App() {
 
       <Route
         path="/forgot-password"
-        element={page("비밀번호 재설정")}
+        element={<ForgotPassword />}
       />
 
       {/* ========================================
@@ -100,21 +105,17 @@ export default function App() {
       ======================================== */}
 
       <Route element={<ProtectedRoute />}>
-        {/* 근로자 공통 레이아웃 */}
         <Route element={<UserLayout />}>
 
-          {/* ------------------------------------
-              홈
-          ------------------------------------ */}
-
+          {/* 홈 */}
           <Route
             path="/home"
             element={<Home />}
           />
 
-          {/* ------------------------------------
+          {/* ====================================
               출퇴근 및 근무기록
-          ------------------------------------ */}
+          ==================================== */}
 
           <Route
             path="/attendance"
@@ -133,16 +134,17 @@ export default function App() {
 
           <Route
             path="/attendance/:recordId"
-            element={page("근무기록 상세")}
+            element={<AttendanceDetail />}
           />
 
-          {/* ------------------------------------
+          {/* ====================================
               근로계약서
-          ------------------------------------ */}
+          ==================================== */}
 
+          {/* Figma 등록 화면 */}
           <Route
             path="/contracts"
-            element={<Contracts />}
+            element={<ContractUpload />}
           />
 
           <Route
@@ -150,19 +152,26 @@ export default function App() {
             element={<ContractUpload />}
           />
 
+          {/* 계약서 목록 */}
+          <Route
+            path="/contracts/list"
+            element={<Contracts />}
+          />
+
+          {/* 분석 결과 및 수정 */}
           <Route
             path="/contracts/:contractId"
-            element={<ContractDetail />}
+            element={<ContractReviewFigma />}
           />
 
           <Route
             path="/contracts/:contractId/review"
-            element={<ContractReview />}
+            element={<ContractReviewFigma />}
           />
 
-          {/* ------------------------------------
+          {/* ====================================
               급여 및 임금 비교
-          ------------------------------------ */}
+          ==================================== */}
 
           <Route
             path="/salary"
@@ -184,9 +193,9 @@ export default function App() {
             element={<SalaryComparison />}
           />
 
-          {/* ------------------------------------
+          {/* ====================================
               월별 리포트 및 증거
-          ------------------------------------ */}
+          ==================================== */}
 
           <Route
             path="/reports"
@@ -198,7 +207,7 @@ export default function App() {
             element={<Evidences />}
           />
 
-          {/* 이전 증거 목록 주소 호환 */}
+          {/* 이전 주소 호환 */}
           <Route
             path="/evidences"
             element={
@@ -209,9 +218,9 @@ export default function App() {
             }
           />
 
-          {/* ------------------------------------
+          {/* ====================================
               진정서
-          ------------------------------------ */}
+          ==================================== */}
 
           <Route
             path="/petitions"
@@ -228,9 +237,9 @@ export default function App() {
             element={<PetitionDetail />}
           />
 
-          {/* ------------------------------------
+          {/* ====================================
               상담
-          ------------------------------------ */}
+          ==================================== */}
 
           <Route
             path="/consultations"
@@ -247,40 +256,61 @@ export default function App() {
             element={<ConsultationDetail />}
           />
 
-          {/* ------------------------------------
+          {/* ====================================
               알림
-          ------------------------------------ */}
+          ==================================== */}
 
           <Route
             path="/notifications"
             element={<Notifications />}
           />
 
-          {/* ------------------------------------
+          {/* ====================================
               내 정보
-          ------------------------------------ */}
+          ==================================== */}
 
           <Route
             path="/profile"
             element={<Profile />}
           />
 
+          {/* 개인정보 및 정보 공유 */}
           <Route
             path="/profile/consents"
             element={<PrivacySettings />}
           />
-          
-          {/* 근무장소 및 사업장 */}
+
+          {/* 카메라 / 위치 권한 */}
+          <Route
+            path="/profile/permissions/:type"
+            element={<PermissionSettings />}
+          />
+
+          {/* 개인정보 삭제 요청 */}
+          <Route
+            path="/profile/data-deletion"
+            element={<DataDeletion />}
+          />
+
+          {/* ====================================
+              근무장소 및 사업장 정보
+          ==================================== */}
+
           <Route
             path="/workplace"
             element={<Workplace />}
+          />
+
+          <Route
+            path="/workplace/business"
+            element={<BusinessInfo />}
           />
 
         </Route>
       </Route>
 
       {/* ========================================
-          2. 존재하지 않는 경로
+          2. 없는 페이지
       ======================================== */}
 
       <Route

@@ -1,0 +1,52 @@
+
+/* 브랜드 심볼 + 글자 로고 가로 정렬 */
+
+.brand-logo {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+
+  gap: 7px;
+
+  width: max-content;
+  max-width: 100%;
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+.brand-logo img {
+  display: block;
+  max-width: none;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+/* 홈 상단바 */
+
+.brand-logo--header .brand-logo__symbol {
+  width: 42px;
+  height: 42px;
+}
+
+.brand-logo--header .brand-logo__text {
+  width: 110px;
+  height: auto;
+}
+
+/* 온보딩 화면 */
+
+.brand-logo--intro {
+  gap: 10px;
+}
+
+.brand-logo--intro .brand-logo__symbol {
+  width: 54px;
+  height: 54px;
+}
+
+.brand-logo--intro .brand-logo__text {
+  width: 144px;
+  height: auto;
+}

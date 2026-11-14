@@ -1,0 +1,752 @@
+
+/* ==========================================
+   일한만큼 - user-app 모바일 UI
+
+   메인 컬러: #F56B4A
+   배경: #FFFAF7
+   모바일 기준 너비: 390px
+========================================== */
+
+/* 앱 바깥 배경 */
+
+.eth-worker-wrapper {
+  min-height: 100dvh;
+  background: #eae5e2;
+  font-family: "Noto Sans KR", system-ui, -apple-system, sans-serif;
+  color: #292524;
+}
+
+.eth-worker-wrapper * {
+  box-sizing: border-box;
+}
+
+.eth-worker-wrapper a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* 앱 컨테이너 */
+
+.eth-worker-shell {
+  width: 390px;
+  max-width: 100%;
+  min-height: 100dvh;
+  margin: 0 auto;
+  background: #fffaf7;
+  position: relative;
+  padding-bottom: calc(76px + env(safe-area-inset-bottom));
+  overflow-x: clip;
+}
+
+.eth-worker-nested {
+  padding-bottom: 0;
+}
+
+/* ==========================================
+   하단 내비게이션바
+========================================== */
+
+.eth-bottom-nav {
+  position: fixed;
+  z-index: 30;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+
+  width: 390px;
+  max-width: 100%;
+  height: calc(72px + env(safe-area-inset-bottom));
+
+  padding: 7px 12px max(10px, env(safe-area-inset-bottom));
+
+  background: rgba(255, 255, 255, 0.97);
+  border-top: 1px solid #ede7e3;
+
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+
+  backdrop-filter: blur(12px);
+
+  box-shadow: 0 -4px 22px rgba(60, 35, 25, 0.035);
+}
+
+.eth-bottom-nav a {
+  min-width: 0;
+  min-height: 50px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 5px;
+
+  color: #9b948f;
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.eth-bottom-nav a svg {
+  width: 22px;
+  height: 22px;
+}
+
+.eth-bottom-nav a.eth-nav-active {
+  color: #f56b4a;
+  font-weight: 800;
+}
+
+/* ==========================================
+   홈 화면 기본
+========================================== */
+
+.eth-home {
+  --eth-primary: #f56b4a;
+  --eth-text: #292524;
+  --eth-muted: #78716c;
+  --eth-border: #ede7e3;
+}
+
+.eth-home h1,
+.eth-home h2,
+.eth-home p {
+  margin: 0;
+}
+
+/* ==========================================
+   홈 상단바 - 핵심 수정
+
+   기존 3열 Grid 제거
+   로고 왼쪽 + 알림 오른쪽
+========================================== */
+
+.eth-home .eth-topbar {
+  width: 100%;
+  height: 66px;
+  min-height: 66px;
+
+  padding: 9px 18px;
+
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  position: sticky;
+  top: 0;
+  z-index: 40;
+
+  background: #fffaf7;
+  border-bottom: 1px solid #ede7e3;
+
+  visibility: visible;
+  opacity: 1;
+}
+
+/* 왼쪽 SVG 로고 */
+
+.eth-home .eth-topbar .brand-logo {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+/* 오른쪽 알림 */
+
+.eth-home .eth-top-bell {
+  display: grid;
+  place-items: center;
+
+  flex: 0 0 40px;
+
+  position: relative;
+
+  width: 40px;
+  height: 40px;
+
+  margin-left: auto;
+
+  color: #292524;
+}
+
+/* 읽지 않은 알림 개수 */
+
+.eth-top-bell em {
+  position: absolute;
+
+  right: -2px;
+  top: -2px;
+
+  min-width: 17px;
+  padding: 2px 4px;
+
+  border-radius: 10px;
+
+  background: #dc2626;
+  color: white;
+
+  font-size: 10px;
+  font-style: normal;
+  text-align: center;
+}
+
+/* ==========================================
+   홈 콘텐츠
+========================================== */
+
+.eth-mobile-content {
+  padding: 20px 18px 35px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 환영 메시지 */
+
+.eth-welcome {
+  margin: 0 0 4px;
+}
+
+.eth-welcome p {
+  color: var(--eth-muted);
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.eth-welcome h1 {
+  white-space: pre-line;
+  font-size: 26px;
+  line-height: 1.28;
+  letter-spacing: -0.045em;
+}
+
+.eth-welcome span {
+  display: block;
+  margin-top: 9px;
+  color: var(--eth-muted);
+  font-size: 12px;
+}
+
+/* ==========================================
+   출퇴근 카드
+========================================== */
+
+.eth-clock-card {
+  padding: 22px;
+
+  border: 1px solid var(--eth-border);
+  border-radius: 18px;
+
+  background: linear-gradient(
+    150deg,
+    #ffffff 25%,
+    #fff5f1
+  );
+
+  box-shadow: 0 3px 16px rgba(70, 45, 35, 0.035);
+}
+
+.eth-clock-ring {
+  width: 172px;
+  height: 172px;
+
+  margin: 3px auto 21px;
+
+  border-radius: 50%;
+
+  display: grid;
+  place-items: center;
+
+  background: conic-gradient(
+    var(--eth-primary) 0 68%,
+    #fae1d9 68%
+  );
+
+  position: relative;
+}
+
+.eth-clock-ring::before {
+  content: "";
+
+  position: absolute;
+  inset: 8px;
+
+  border-radius: 50%;
+  background: white;
+}
+
+.eth-clock-ring > div {
+  position: relative;
+  z-index: 1;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  gap: 4px;
+}
+
+.eth-clock-ring svg {
+  color: var(--eth-primary);
+}
+
+.eth-clock-ring b {
+  font-size: 28px;
+  letter-spacing: -0.03em;
+}
+
+.eth-clock-ring span {
+  color: var(--eth-muted);
+  font-size: 12px;
+}
+
+.eth-clock-complete .eth-clock-ring {
+  background: #ecfdf3;
+}
+
+.eth-clock-complete .eth-clock-ring svg {
+  color: #15803d;
+}
+
+/* 출퇴근 버튼 */
+
+.eth-primary-btn,
+.eth-secondary-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  min-height: 54px;
+  border-radius: 14px;
+
+  font-weight: 750;
+  font-size: 14px;
+}
+
+.eth-home a.eth-primary-btn {
+  color: white;
+  background: var(--eth-primary);
+
+  box-shadow: 0 7px 18px rgba(245, 107, 74, 0.2);
+}
+
+.eth-secondary-btn {
+  background: white;
+  border: 1px solid #ddd3ce;
+}
+
+.eth-privacy-note {
+  margin-top: 14px !important;
+
+  color: var(--eth-muted);
+  font-size: 10px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 6px;
+}
+
+.eth-complete-line {
+  background: #ecfdf3;
+  color: #15803d;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  border-radius: 12px;
+  min-height: 48px;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* ==========================================
+   공통 홈 카드
+========================================== */
+
+.eth-home-panel {
+  padding: 17px 16px;
+
+  background: white;
+  border: 1px solid var(--eth-border);
+  border-radius: 18px;
+
+  box-shadow: 0 3px 16px rgba(70, 45, 35, 0.035);
+}
+
+.eth-panel-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.eth-panel-heading p {
+  font-size: 10px;
+  color: var(--eth-muted);
+  margin-bottom: 3px;
+}
+
+.eth-panel-heading h2 {
+  font-size: 17px;
+  letter-spacing: -0.025em;
+}
+
+.eth-panel-heading > a {
+  display: flex;
+  align-items: center;
+
+  color: #b8432c;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ==========================================
+   근무시간 카드
+========================================== */
+
+.eth-time-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.eth-time-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  padding: 10px;
+}
+
+.eth-time-grid > div:nth-child(odd) {
+  border-right: 1px solid var(--eth-border);
+}
+
+.eth-time-grid > div:nth-child(-n+2) {
+  border-bottom: 1px solid var(--eth-border);
+}
+
+.eth-time-grid span,
+.eth-salary-grid span {
+  font-size: 11px;
+  color: var(--eth-muted);
+}
+
+.eth-time-grid b {
+  font-size: 15px;
+}
+
+/* ==========================================
+   근로계약서 카드
+========================================== */
+
+.eth-contract-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  padding: 14px;
+
+  border: 1px solid #f3d6cc;
+  border-radius: 16px;
+
+  background: #fff0eb;
+}
+
+.eth-contract-banner > span:nth-child(2) {
+  flex: 1;
+
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.eth-contract-banner b {
+  font-size: 14px;
+}
+
+.eth-contract-banner small {
+  font-size: 11px;
+  color: var(--eth-muted);
+}
+
+.eth-icon-box {
+  height: 38px;
+  width: 38px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 11px;
+
+  background: white;
+  color: var(--eth-primary);
+}
+
+/* ==========================================
+   급여 비교 카드
+========================================== */
+
+.eth-salary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.eth-salary-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.eth-salary-grid strong {
+  font-size: 15px;
+}
+
+.eth-salary-grid .eth-salary-diff {
+  grid-column: 1 / -1;
+
+  padding-top: 12px;
+  border-top: 1px solid var(--eth-border);
+}
+
+/* ==========================================
+   상담 현황
+========================================== */
+
+.eth-muted {
+  color: var(--eth-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.eth-inline-link {
+  display: inline-block;
+
+  margin-top: 12px;
+
+  color: #b8432c !important;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.eth-consult {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+
+  gap: 8px;
+
+  font-size: 12px;
+}
+
+.eth-consult .eth-status-pill {
+  padding: 5px 9px;
+
+  color: #b45309;
+  background: #fff8e7;
+
+  border-radius: 999px;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.eth-consult p {
+  color: var(--eth-muted);
+}
+
+.eth-consult a {
+  color: #b8432c;
+  font-weight: 700;
+}
+
+/* ==========================================
+   최근 알림
+========================================== */
+
+.eth-notice {
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+  padding: 10px 0;
+
+  border-top: 1px solid var(--eth-border);
+}
+
+.eth-notice strong {
+  font-size: 13px;
+}
+
+.eth-notice span {
+  font-size: 11px;
+  color: var(--eth-muted);
+  line-height: 1.5;
+}
+
+/* ==========================================
+   바로가기 메뉴
+========================================== */
+
+.eth-quick-links {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.eth-quick-links a {
+  border: 1px solid #f3d6cc;
+
+  background: #fff0eb;
+
+  border-radius: 12px;
+  padding: 10px 5px;
+
+  text-align: center;
+
+  font-size: 11px;
+  font-weight: 700;
+  color: #b8432c;
+}
+
+/* ==========================================
+   홈 새로고침
+========================================== */
+
+.eth-refresh {
+  align-self: center;
+
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  border: 0;
+  background: transparent;
+
+  color: var(--eth-muted);
+  font-size: 12px;
+  padding: 12px;
+}
+
+/* ==========================================
+   로딩 및 오류
+========================================== */
+
+.eth-info-message,
+.eth-error {
+  padding: 10px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.eth-info-message {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.eth-error {
+  background: #fff0f0;
+  color: #dc2626;
+}
+
+/* ==========================================
+   앱 전역 기본값
+========================================== */
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+  width: 100%;
+}
+
+body {
+  background: #eae5e2;
+  color: #292524;
+
+  font-family:
+    "Noto Sans KR",
+    system-ui,
+    -apple-system,
+    sans-serif;
+}
+
+/* ==========================================
+   하위 기능 페이지 기본 레이아웃
+========================================== */
+
+.eth-worker-nested > main {
+  max-width: 390px !important;
+  width: 100%;
+
+  padding: 20px !important;
+
+  margin: 0 auto !important;
+  overflow-wrap: anywhere;
+}
+
+.eth-worker-nested > main h1 {
+  font-size: 23px;
+  line-height: 1.35;
+  letter-spacing: -0.04em;
+}
+
+.eth-worker-nested > main h2 {
+  font-size: 18px;
+  letter-spacing: -0.03em;
+}
+
+.eth-worker-nested > main input,
+.eth-worker-nested > main select,
+.eth-worker-nested > main textarea {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.eth-worker-nested > main button {
+  cursor: pointer;
+}
+
+.eth-worker-nested > main a {
+  color: #d95234;
+}
+
+.eth-worker-nested > main pre {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.eth-worker-nested > main table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.eth-worker-nested > main section {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.eth-worker-nested > main img {
+  max-width: 100%;
+  height: auto;
+}
+
+.eth-worker-nested {
+  padding-bottom: 0;
+}

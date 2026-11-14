@@ -1,231 +1,611 @@
 
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
+import { uploadContract } from "../../api/contract";
+import "../../styles/contract-upload-figma.css";
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024;
 
-// 백엔드 multipart 필드명 확인 전에는
-// 실제 계약서 업로드를 실행하지 않는다.
-const UPLOAD_API_READY = false;
+const ACCEPTED_TYPES = [
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+];
 
-function isSupportedFile(file) {
-  const mimeTypes = [
-    "application/pdf",
-    "image/jpeg",
-    "image/png",
-    "image/webp",
-  ];
+const ACCEPTED_EXTENSIONS =
+  ".pdf,.jpg,.jpeg,.png,.webp";
 
-  return mimeTypes.includes(file.type);
+// 기존 API 명세의 multipart 파일 필드명 확인 필요
+const UPLOAD_FIELD = "file";
+
+// 화면 전용 아이콘
+function ContractIcon({ name, size = 22 }) {
+  const icons = {
+    arrow: (
+      <path d="M19 12H5m6-6-6 6 6 6" />
+    ),
+
+    camera: (
+      <>
+        <path d="M4 7h4l2-2h4l2 2h4v12H4z" />
+        <circle cx="12" cy="13" r="4" />
+      </>
+    ),
+
+    upload: (
+      <>
+        <path d="M12 16V4M7 9l5-5 5 5" />
+        <path d="M4 15v5h16v-5" />
+      </>
+    ),
+
+    chevron: (
+      <path d="m9 5 7 7-7 7" />
+    ),
+
+    file: (
+      <>
+        <path d="M6 2h8l4 4v16H6z" />
+        <path d="M14 2v5h4M9 12h6M9 16h6" />
+      </>
+    ),
+
+    alert: (
+      <>
+        <path d="m12 3 10 18H2z" />
+        <path d="M12 9v5M12 18h.01" />
+      </>
+    ),
+
+    check: (
+      <path d="m5 12 4 4L19 6" />
+    ),
+
+    refresh: (
+      <>
+        <path d="M20 7v5h-5M4 17v-5h5" />
+        <path d="M18.4 9A7 7 0 0 0 6.5 6.5L4 9m1.6 6a7 7 0 0 0 11.9 2.5L20 15" />
+      </>
+    ),
+
+    trash: (
+      <>
+        <path d="M4 7h16M9 7V4h6v3" />
+        <path d="M6 7l1 14h10l1-14M10 11v6M14 11v6" />
+      </>
+    ),
+  };
+
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {icons[name] ?? icons.file}
+    </svg>
+  );
+}
+
+// 서버 API 오류 출력
+function getErrorMessage(error) {
+  if (error?.status === 401) {
+    return "로그인 세션이 만료되었습니다. 다시 로그인해 주세요.";
+  }
+
+  if (error?.status === 413) {
+    return "업로드 파일이 서버의 허용 용량을 초과했습니다.";
+  }
+
+  if (error?.status === 415) {
+    return "서버에서 지원하지 않는 파일 형식입니다.";
+  }
+
+  return (
+    error?.message ??
+    "계약서를 업로드하지 못했습니다. 다시 시도해 주세요."
+  );
+}
+
+// 업로드 응답에서 실제 계약서 ID 추출
+function getContractId(response) {
+  const result = response?.data ?? response;
+  const contract = result?.contract ?? result;
+
+  return (
+    result?.contractId ??
+    result?.id ??
+    contract?.contractId ??
+    contract?.id ??
+    null
+  );
 }
 
 export default function ContractUpload() {
-  const [file, setFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState("");
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
+  const navigate = useNavigate();
 
+  const cameraInputRef = useRef(null);
+  const fileInputRef = useRef(null);
   const previewUrlRef = useRef(null);
 
-  // 페이지를 벗어날 때 Object URL 정리
+  const [selectedFile, setSelectedFile] =
+    useState(null);
+
+  const [previewUrl, setPreviewUrl] =
+    useState("");
+
+  const [fileError, setFileError] =
+    useState("");
+
+  const [uploading, setUploading] =
+    useState(false);
+
+  // 컴포넌트 종료 시 미리보기 메모리 해제
   useEffect(() => {
     return () => {
       if (previewUrlRef.current) {
-        URL.revokeObjectURL(previewUrlRef.current);
+        URL.revokeObjectURL(
+          previewUrlRef.current
+        );
+
         previewUrlRef.current = null;
       }
     };
   }, []);
 
-  function clearPreviewUrl() {
+  function releasePreview() {
     if (previewUrlRef.current) {
-      URL.revokeObjectURL(previewUrlRef.current);
+      URL.revokeObjectURL(
+        previewUrlRef.current
+      );
+
       previewUrlRef.current = null;
     }
   }
 
-  function handleFileChange(event) {
-    const selectedFile = event.target.files?.[0];
+  function clearFile() {
+    if (uploading) return;
 
-    event.target.value = "";
+    releasePreview();
 
-    if (!selectedFile) return;
+    setSelectedFile(null);
+    setPreviewUrl("");
+    setFileError("");
+  }
 
-    setError("");
-    setMessage("");
+  // 카메라 촬영 또는 파일 업로드 결과 처리
+  function handleFileSelect(file) {
+    if (!file || uploading) return;
 
-    if (!isSupportedFile(selectedFile)) {
-      setError(
+    setFileError("");
+
+    if (!ACCEPTED_TYPES.includes(file.type)) {
+      setFileError(
         "PDF, JPG, PNG, WEBP 파일만 등록할 수 있습니다."
       );
       return;
     }
 
-    if (selectedFile.size > MAX_FILE_SIZE) {
-      setError(
-        "파일 크기는 20MB 이하여야 합니다."
+    if (file.size > MAX_FILE_SIZE) {
+      setFileError(
+        "계약서 파일 크기는 20MB 이하여야 합니다."
       );
       return;
     }
 
-    clearPreviewUrl();
-
-    const newUrl = URL.createObjectURL(selectedFile);
-
-    previewUrlRef.current = newUrl;
-
-    setFile(selectedFile);
-    setPreviewUrl(newUrl);
-  }
-
-  function handleRemoveFile() {
-    clearPreviewUrl();
-
-    setFile(null);
-    setPreviewUrl("");
-    setError("");
-    setMessage("");
-  }
-
-  function handleUpload() {
-    if (!file) {
-      setError("근로계약서 파일을 선택해 주세요.");
-      return;
-    }
-
-    if (!UPLOAD_API_READY) {
-      setMessage(
-        "파일 선택과 미리보기가 완료되었습니다. " +
-        "백엔드 업로드 요청 형식을 확인한 후 " +
-        "서버 저장 기능을 연결합니다."
+    if (file.size === 0) {
+      setFileError(
+        "파일이 비어 있습니다. 다시 촬영하거나 선택해 주세요."
       );
       return;
     }
 
-    // 실제 업로드 로직은 API 상세 명세 확인 후 구현.
-    // POST /api/v1/contracts
-    //
-    // 서버에 따라 파일 필드명이
-    // file, contractFile, document 등으로 달라짐.
-    //
-    // 분석 결과가 즉시 반환되는지,
-    // 별도 상태 조회가 필요한지도 확인 필요.
+    releasePreview();
+
+    const url = URL.createObjectURL(file);
+
+    previewUrlRef.current = url;
+
+    setSelectedFile(file);
+    setPreviewUrl(url);
   }
 
-  const isPdf = file?.type === "application/pdf";
+  function handleCameraClick() {
+    if (uploading) return;
+
+    cameraInputRef.current?.click();
+  }
+
+  function handleUploadClick() {
+    if (uploading) return;
+
+    fileInputRef.current?.click();
+  }
+
+  // 실제 기존 계약서 API 호출
+  async function handleAnalyze() {
+    if (uploading) return;
+
+    if (!selectedFile) {
+      setFileError(
+        "분석할 근로계약서를 먼저 선택해 주세요."
+      );
+      return;
+    }
+
+    setUploading(true);
+    setFileError("");
+
+    try {
+      const formData = new FormData();
+
+      formData.append(
+        UPLOAD_FIELD,
+        selectedFile,
+        selectedFile.name
+      );
+
+      // POST /api/v1/contracts
+      // 기존 api/contract.js의 함수를 그대로 사용
+      const response = await uploadContract(
+        formData
+      );
+
+      const contractId = getContractId(
+        response
+      );
+
+      if (!contractId) {
+        throw new Error(
+          "업로드 응답에 계약서 ID가 없습니다. " +
+          "계약서 목록에서 서버 저장 여부를 확인해 주세요."
+        );
+      }
+
+      // 기존 계약서 AI 분석·검토 페이지
+      navigate(
+        `/contracts/${encodeURIComponent(
+          contractId
+        )}/review`,
+        {
+          replace: true,
+        }
+      );
+    } catch (error) {
+      setFileError(
+        getErrorMessage(error)
+      );
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  const isPdf =
+    selectedFile?.type === "application/pdf";
 
   return (
-    <main
-      style={{
-        padding: 24,
-        maxWidth: 640,
-        margin: "0 auto",
-      }}
-    >
-      <h1>근로계약서 등록</h1>
+    <div className="cau-contract-page">
 
-      <p>
-        계약서 PDF 또는 사진 파일을 선택해 주세요.
-      </p>
+      {/* ====================================
+          Figma 상단바
+      ==================================== */}
 
-      <section style={{ marginBottom: 24 }}>
-        <h2>1. 파일 선택</h2>
+      <header className="cau-topbar">
+        <Link
+          to="/home"
+          className="cau-back-button"
+          aria-label="홈으로 돌아가기"
+        >
+          <ContractIcon
+            name="arrow"
+            size={21}
+          />
+        </Link>
 
-        <input
-          type="file"
-          accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
-          onChange={handleFileChange}
-          aria-label="근로계약서 파일 선택"
-        />
+        <strong>근로계약서 확인</strong>
 
-        <p>
-          지원 형식: PDF, JPG, PNG, WEBP
-        </p>
+        <span className="cau-topbar-space" />
+      </header>
 
-        <p>최대 파일 크기: 20MB</p>
+      <main className="cau-content">
 
-        {error && (
-          <p role="alert" style={{ color: "red" }}>
-            {error}
-          </p>
-        )}
-      </section>
+        {/* ====================================
+            Figma 제목
+        ==================================== */}
 
-      {file && (
-        <section style={{ marginBottom: 24 }}>
-          <h2>2. 계약서 미리보기</h2>
-
-          <p>파일명: {file.name}</p>
-
-          <p>
-            파일 크기:{" "}
-            {(file.size / 1024 / 1024).toFixed(2)}
-            MB
+        <section className="cau-heading">
+          <p className="cau-eyebrow">
+            CONTRACT CHECK
           </p>
 
-          {previewUrl && isPdf && (
-            <iframe
-              title="근로계약서 PDF 미리보기"
-              src={previewUrl}
-              style={{
-                width: "100%",
-                height: 480,
-                border: "1px solid #ddd",
-              }}
-            />
-          )}
+          <h1>
+            계약서를 등록해 주세요
+          </h1>
 
-          {previewUrl && !isPdf && (
-            <img
-              src={previewUrl}
-              alt="근로계약서 미리보기"
-              style={{
-                display: "block",
-                maxWidth: "100%",
-                maxHeight: 480,
-                objectFit: "contain",
-              }}
-            />
-          )}
-
-          <button
-            type="button"
-            onClick={handleRemoveFile}
-            style={{ marginTop: 16 }}
-          >
-            파일 삭제 및 다시 선택
-          </button>
+          <p className="cau-description">
+            문서 전체와 글자가 선명하게
+            보이도록 촬영하면 더 정확하게
+            확인할 수 있어요.
+          </p>
         </section>
-      )}
 
-      <section style={{ marginBottom: 24 }}>
-        <h2>3. 계약서 등록</h2>
-
-        <p>
-          파일을 확인한 다음 등록 버튼을 눌러 주세요.
-        </p>
+        {/* ====================================
+            Figma 카메라 촬영 카드
+        ==================================== */}
 
         <button
           type="button"
-          onClick={handleUpload}
-          disabled={!file}
+          className="cau-upload-option"
+          onClick={handleCameraClick}
+          disabled={uploading}
         >
-          계약서 등록 요청 확인
+          <span className="cau-option-icon">
+            <ContractIcon
+              name="camera"
+              size={23}
+            />
+          </span>
+
+          <span className="cau-option-copy">
+            <b>카메라로 촬영</b>
+            <small>
+              계약서 전체가 보이도록 촬영
+            </small>
+          </span>
+
+          <span className="cau-option-chevron">
+            <ContractIcon
+              name="chevron"
+              size={17}
+            />
+          </span>
         </button>
 
-        {message && (
-          <p role="status">{message}</p>
+        {/* ====================================
+            Figma 파일 업로드 카드
+        ==================================== */}
+
+        <button
+          type="button"
+          className="cau-upload-option"
+          onClick={handleUploadClick}
+          disabled={uploading}
+        >
+          <span className="cau-option-icon">
+            <ContractIcon
+              name="upload"
+              size={23}
+            />
+          </span>
+
+          <span className="cau-option-copy">
+            <b>이미지·파일 업로드</b>
+            <small>
+              지원 형식과 파일 크기를 확인해 주세요
+            </small>
+          </span>
+
+          <span className="cau-option-chevron">
+            <ContractIcon
+              name="chevron"
+              size={17}
+            />
+          </span>
+        </button>
+
+        {/* 실제 촬영 / 파일 선택 */}
+
+        <input
+          ref={cameraInputRef}
+          className="cau-hidden-input"
+          type="file"
+          accept="image/*"
+          capture="environment"
+          aria-label="근로계약서 카메라 촬영"
+          onChange={(event) => {
+            handleFileSelect(
+              event.target.files?.[0]
+            );
+
+            event.target.value = "";
+          }}
+        />
+
+        <input
+          ref={fileInputRef}
+          className="cau-hidden-input"
+          type="file"
+          accept={ACCEPTED_EXTENSIONS}
+          aria-label="근로계약서 이미지 또는 PDF 선택"
+          onChange={(event) => {
+            handleFileSelect(
+              event.target.files?.[0]
+            );
+
+            event.target.value = "";
+          }}
+        />
+
+        {/* ====================================
+            파일 선택 후 미리보기
+            기능 명세서 1.1.3
+        ==================================== */}
+
+        {selectedFile && (
+          <section className="cau-preview-card">
+            <div className="cau-section-header">
+              <h2>촬영 미리보기</h2>
+
+              <button
+                type="button"
+                disabled={uploading}
+                onClick={clearFile}
+              >
+                <ContractIcon
+                  name="refresh"
+                  size={15}
+                />
+                다시 선택
+              </button>
+            </div>
+
+            <div className="cau-preview-frame">
+              {isPdf ? (
+                <iframe
+                  src={previewUrl}
+                  title="근로계약서 PDF 미리보기"
+                />
+              ) : (
+                <img
+                  src={previewUrl}
+                  alt="선택한 근로계약서 미리보기"
+                />
+              )}
+            </div>
+
+            <div className="cau-file-information">
+              <ContractIcon
+                name="file"
+                size={19}
+              />
+
+              <div>
+                <b>{selectedFile.name}</b>
+
+                <span>
+                  {(
+                    selectedFile.size /
+                    1024 /
+                    1024
+                  ).toFixed(2)}
+                  MB
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={clearFile}
+                disabled={uploading}
+                aria-label="선택한 파일 삭제"
+              >
+                <ContractIcon
+                  name="trash"
+                  size={19}
+                />
+              </button>
+            </div>
+
+            <button
+              className="cau-primary-button"
+              type="button"
+              onClick={handleAnalyze}
+              disabled={uploading}
+            >
+              {uploading ? (
+                <>
+                  <span className="cau-spinner" />
+                  계약서 업로드 중...
+                </>
+              ) : (
+                <>
+                  <ContractIcon
+                    name="check"
+                    size={20}
+                  />
+                  AI 계약서 분석 시작
+                </>
+              )}
+            </button>
+          </section>
         )}
 
-        <p style={{ fontSize: 13 }}>
-          현재는 파일 업로드 준비 단계입니다.
-          서버 저장은 아직 실행되지 않습니다.
-        </p>
-      </section>
+        {/* ====================================
+            Figma 촬영 전 확인 카드
+        ==================================== */}
 
-      <Link to="/contracts">
-        근로계약서 목록으로 돌아가기
-      </Link>
-    </main>
+        <section className="cau-document-guide">
+
+          {/* Figma 문서 일러스트 */}
+          <div
+            className="cau-document-mock"
+            aria-hidden="true"
+          >
+            <span />
+            <span />
+            <span />
+            <span />
+          </div>
+
+          <div className="cau-guide-copy">
+            <b>촬영 전 확인</b>
+
+            <ul>
+              <li>
+                문서 네 모서리가 모두 보여야 해요.
+              </li>
+
+              <li>
+                빛 반사 없이 글자가 선명해야 해요.
+              </li>
+
+              <li>
+                촬영 후 미리보기에서 재촬영할 수 있어요.
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        {/* ====================================
+            Figma 경고 안내
+        ==================================== */}
+
+        <div className="cau-warning">
+          <ContractIcon
+            name="alert"
+            size={19}
+          />
+
+          <span>
+            지원하지 않는 파일이거나 업로드에
+            실패하면 파일을 다시 선택하도록
+            안내합니다.
+          </span>
+        </div>
+
+        {/* 오류는 성공 화면으로 숨기지 않음 */}
+        {fileError && (
+          <div
+            className="cau-error"
+            role="alert"
+          >
+            <ContractIcon
+              name="alert"
+              size={19}
+            />
+            <span>{fileError}</span>
+          </div>
+        )}
+
+        {/* 기존 계약서 목록 기능 유지 */}
+        <Link
+          to="/contracts/list"
+          className="cau-contract-list-link"
+        >
+          등록한 계약서 확인
+          <ContractIcon
+            name="chevron"
+            size={16}
+          />
+        </Link>
+
+      </main>
+    </div>
   );
 }

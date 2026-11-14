@@ -1,0 +1,630 @@
+
+/* ==========================================
+   일한만큼 — 진정서 목록 모바일 UI
+
+   Main Color: #F56B4A
+   Background: #FFFAF7
+   Mobile Width: 390px
+========================================== */
+
+.pcl-page {
+  --pcl-main: #F56B4A;
+  --pcl-deep: #B8432C;
+  --pcl-bg: #FFFAF7;
+  --pcl-ink: #292524;
+  --pcl-muted: #78716C;
+  --pcl-line: #EDE7E3;
+
+  width: 100%;
+  max-width: 390px;
+  min-height: 100dvh;
+
+  margin: 0 auto;
+
+  background: var(--pcl-bg);
+  color: var(--pcl-ink);
+
+  font-family:
+    "Noto Sans KR",
+    system-ui,
+    -apple-system,
+    sans-serif;
+}
+
+/* 기본 스타일 분리 */
+
+.pcl-page *,
+.pcl-page *::before,
+.pcl-page *::after {
+  box-sizing: border-box;
+}
+
+.pcl-page h1,
+.pcl-page h2,
+.pcl-page h3,
+.pcl-page p {
+  margin: 0;
+}
+
+.pcl-page a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.pcl-page button {
+  font: inherit;
+  cursor: pointer;
+}
+
+.pcl-page button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pcl-page svg {
+  flex-shrink: 0;
+}
+
+/* ==========================================
+   상단바
+========================================== */
+
+.pcl-header {
+  height: 65px;
+  padding: 10px 18px;
+
+  display: grid;
+  grid-template-columns:
+    36px minmax(0, 1fr) 36px;
+
+  align-items: center;
+  gap: 8px;
+
+  background: var(--pcl-bg);
+  border-bottom: 1px solid var(--pcl-line);
+}
+
+.pcl-header a,
+.pcl-header button {
+  width: 35px;
+  height: 36px;
+
+  display: grid;
+  place-items: center;
+
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.pcl-header strong {
+  font-size: 16px;
+  letter-spacing: -0.035em;
+  font-weight: 750;
+}
+
+/* ==========================================
+   본문
+========================================== */
+
+.pcl-content {
+  padding: 24px 18px 36px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 17px;
+}
+
+/* 페이지 제목 */
+
+.pcl-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pcl-eyebrow,
+.pcl-hero-eyebrow {
+  color: var(--pcl-deep);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.pcl-heading h1 {
+  font-size: 27px;
+  letter-spacing: -0.055em;
+  line-height: 1.3;
+  font-weight: 800;
+}
+
+.pcl-heading > p:last-child {
+  font-size: 12px;
+  line-height: 1.65;
+
+  color: var(--pcl-muted);
+  word-break: keep-all;
+}
+
+/* ==========================================
+   새 진정서 생성 카드
+========================================== */
+
+.pcl-hero {
+  padding: 20px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+
+  background: linear-gradient(
+    140deg,
+    #FFFFFF,
+    #FFF0E9
+  );
+
+  border: 1px solid #F6DFD7;
+  border-radius: 20px;
+
+  box-shadow:
+    0 6px 20px rgba(120, 66, 45, 0.05);
+}
+
+.pcl-hero-icon {
+  display: grid;
+  place-items: center;
+
+  width: 48px;
+  height: 48px;
+
+  border-radius: 14px;
+
+  background: #FFE4DB;
+  color: var(--pcl-main);
+}
+
+.pcl-hero > div {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.pcl-hero h2 {
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: -0.05em;
+}
+
+.pcl-hero > div > p:last-child {
+  color: var(--pcl-muted);
+
+  font-size: 11px;
+  line-height: 1.65;
+
+  word-break: keep-all;
+}
+
+/* ==========================================
+   공통 버튼
+========================================== */
+
+.pcl-main-button,
+.pcl-outline-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  min-height: 48px;
+  width: 100%;
+
+  padding: 11px 13px;
+  border-radius: 13px;
+
+  font-size: 12px;
+  font-weight: 750;
+  text-align: center;
+
+  border: 1px solid transparent;
+}
+
+.pcl-main-button {
+  background: var(--pcl-main);
+  color: white !important;
+
+  box-shadow:
+    0 7px 17px rgba(245, 107, 74, 0.16);
+}
+
+.pcl-outline-button {
+  background: white;
+  color: var(--pcl-deep) !important;
+
+  border-color: #F3C8BA;
+}
+
+/* ==========================================
+   상태별 진정서 개수
+========================================== */
+
+.pcl-stats {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  gap: 8px;
+}
+
+.pcl-stats > div {
+  padding: 13px 11px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  border: 1px solid var(--pcl-line);
+  border-radius: 14px;
+
+  background: #fff;
+}
+
+.pcl-stats span {
+  color: var(--pcl-muted);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.pcl-stats strong {
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.pcl-stats small {
+  margin-left: 3px;
+
+  color: var(--pcl-muted);
+  font-size: 10px;
+  font-weight: 500;
+}
+
+/* ==========================================
+   목록 제목
+========================================== */
+
+.pcl-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+
+  padding-top: 3px;
+}
+
+.pcl-section-head h2 {
+  font-size: 17px;
+  letter-spacing: -0.04em;
+}
+
+.pcl-section-head > span {
+  color: var(--pcl-muted);
+  font-size: 10px;
+}
+
+/* ==========================================
+   진정서 상태 필터
+========================================== */
+
+.pcl-filters {
+  display: flex;
+  gap: 6px;
+
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.pcl-filters button {
+  flex: 1 0 auto;
+
+  padding: 9px 10px;
+
+  border-radius: 10px;
+  border: 1px solid var(--pcl-line);
+
+  background: white;
+  color: var(--pcl-muted);
+
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.pcl-filters button.active {
+  background: #FFF0EB;
+  border-color: #F3C5B6;
+  color: var(--pcl-deep);
+}
+
+/* ==========================================
+   진정서 목록
+========================================== */
+
+.pcl-record-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 진정서 카드 */
+
+.pcl-record {
+  padding: 16px;
+
+  border: 1px solid var(--pcl-line);
+  border-radius: 17px;
+
+  background: white;
+
+  box-shadow:
+    0 3px 16px rgba(70, 45, 35, 0.035);
+}
+
+/* 상단 아이콘 및 배지 */
+
+.pcl-record-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  margin-bottom: 12px;
+}
+
+.pcl-record-icon {
+  display: grid;
+  place-items: center;
+
+  width: 42px;
+  height: 42px;
+
+  border-radius: 12px;
+
+  background: #FFF0EB;
+  color: var(--pcl-main);
+}
+
+/* 상태 배지 */
+
+.pcl-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+
+  padding: 6px 9px;
+  border-radius: 99px;
+
+  background: #F5F3F1;
+  color: #78716C;
+
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.pcl-status-review,
+.pcl-status-processing {
+  background: #FFF7DF;
+  color: #A16207;
+}
+
+.pcl-status-done {
+  background: #ECFDF3;
+  color: #15803D;
+}
+
+.pcl-status-failed {
+  background: #FFF0F0;
+  color: #DC2626;
+}
+
+/* 문서 제목 */
+
+.pcl-record h3 {
+  font-size: 15px;
+  line-height: 1.4;
+  letter-spacing: -0.035em;
+
+  overflow-wrap: anywhere;
+}
+
+.pcl-record-created {
+  margin-top: 5px !important;
+
+  color: var(--pcl-muted);
+  font-size: 10px;
+}
+
+/* ==========================================
+   진정서 상세 요약
+========================================== */
+
+.pcl-record-details {
+  margin-top: 13px;
+  padding: 10px 12px;
+
+  border-radius: 11px;
+
+  background: #FAF8F6;
+
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.pcl-record-details > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.pcl-record-details span {
+  color: var(--pcl-muted);
+  flex-shrink: 0;
+}
+
+.pcl-record-details strong {
+  text-align: right;
+  font-weight: 650;
+
+  overflow-wrap: anywhere;
+}
+
+/* 상세 화면 이동 */
+
+.pcl-record-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+
+  margin-top: 13px;
+  padding-top: 13px;
+
+  border-top: 1px solid var(--pcl-line);
+
+  color: var(--pcl-deep) !important;
+
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.pcl-record-no-id {
+  padding-top: 12px;
+
+  color: #B45309;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/* ==========================================
+   로딩 / 빈 상태 / 오류
+========================================== */
+
+.pcl-message {
+  padding: 24px 15px;
+
+  border: 1px solid var(--pcl-line);
+  border-radius: 17px;
+
+  background: #fff;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+
+  text-align: center;
+
+  color: var(--pcl-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.pcl-message h3 {
+  color: var(--pcl-ink);
+  font-size: 15px;
+}
+
+.pcl-message p {
+  font-size: 11px;
+  line-height: 1.7;
+  word-break: keep-all;
+}
+
+.pcl-message-icon {
+  display: grid;
+  place-items: center;
+
+  width: 55px;
+  height: 55px;
+
+  border-radius: 17px;
+
+  background: #FFF0EB;
+  color: var(--pcl-main);
+}
+
+/* 서버 오류 */
+
+.pcl-error {
+  border-color: #F1D1CB;
+  background: #FFF9F7;
+}
+
+.pcl-error .pcl-message-icon {
+  color: #D84B3D;
+  background: #FFF0F0;
+}
+
+/* 빈 상태 */
+
+.pcl-empty {
+  padding: 30px 20px;
+}
+
+/* 로딩 스피너 */
+
+.pcl-spinner {
+  display: inline-block;
+
+  width: 22px;
+  height: 22px;
+
+  border: 3px solid #F7D3C9;
+  border-top-color: var(--pcl-main);
+  border-radius: 50%;
+
+  animation:
+    pcl-spin 0.8s linear infinite;
+}
+
+@keyframes pcl-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ==========================================
+   공식 제출 안내
+========================================== */
+
+.pcl-guidance {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+
+  border-radius: 13px;
+
+  background: #FFF8E7;
+  color: #92620E;
+
+  padding: 13px;
+
+  font-size: 10px;
+  line-height: 1.7;
+}
+
+.pcl-guidance p {
+  flex: 1;
+  min-width: 0;
+
+  word-break: keep-all;
+}
+
+/* 접근성 */
+
+.pcl-page :focus-visible {
+  outline: 2px solid var(--pcl-main);
+  outline-offset: 2px;
+}

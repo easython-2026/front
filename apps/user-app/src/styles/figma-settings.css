@@ -1,0 +1,838 @@
+
+/* ==========================================
+   일한만큼 - 내 정보 / 근무장소 관리
+   Figma 모바일 전용 UI
+
+   Main Color: #F56B4A
+   Background: #FFFAF7
+   Width: 390px
+========================================== */
+
+/* 기본 화면 */
+
+.pfs-screen {
+  --pfs-primary: #f56b4a;
+  --pfs-primary-dark: #b8432c;
+  --pfs-primary-light: #fff0eb;
+  --pfs-text: #292524;
+  --pfs-muted: #78716c;
+  --pfs-border: #ede7e3;
+
+  width: 100%;
+  max-width: 390px;
+  min-height: 100dvh;
+
+  margin: 0 auto;
+
+  background: #fffaf7;
+  color: var(--pfs-text);
+
+  font-family:
+    "Noto Sans KR",
+    system-ui,
+    -apple-system,
+    sans-serif;
+}
+
+.pfs-screen *,
+.pfs-screen *::before,
+.pfs-screen *::after {
+  box-sizing: border-box;
+}
+
+.pfs-screen a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.pfs-screen button,
+.pfs-screen input,
+.pfs-screen select {
+  font: inherit;
+}
+
+.pfs-screen button {
+  cursor: pointer;
+}
+
+.pfs-screen button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.pfs-screen h1,
+.pfs-screen h2,
+.pfs-screen p {
+  margin: 0;
+}
+
+.pfs-screen svg {
+  flex-shrink: 0;
+}
+
+/* ==========================================
+   Figma 상단바
+========================================== */
+
+.pfs-header {
+  height: 66px;
+  padding: 10px 18px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  border-bottom: 1px solid var(--pfs-border);
+  background: #fffaf7;
+}
+
+.pfs-header strong {
+  font-size: 17px;
+  font-weight: 750;
+  letter-spacing: -0.035em;
+}
+
+.pfs-header > button {
+  border: 0;
+  background: transparent;
+
+  color: var(--pfs-muted);
+
+  display: grid;
+  place-items: center;
+
+  width: 36px;
+  height: 36px;
+}
+
+.pfs-back-header {
+  display: grid;
+  grid-template-columns: 38px 1fr 38px;
+}
+
+.pfs-back-header > a {
+  display: grid;
+  place-items: center;
+
+  width: 36px;
+  height: 36px;
+}
+
+/* ==========================================
+   메인 콘텐츠
+========================================== */
+
+.pfs-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  padding: 18px 18px 35px;
+}
+
+/* 공통 카드 */
+
+.pfs-card,
+.pfs-profile-card {
+  background: #fff;
+
+  border: 1px solid var(--pfs-border);
+  border-radius: 18px;
+
+  box-shadow:
+    0 3px 16px rgba(70, 45, 35, 0.035);
+}
+
+/* ==========================================
+   프로필 카드
+========================================== */
+
+.pfs-profile-card {
+  padding: 18px;
+
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+/* 프로필 아바타 */
+
+.pfs-avatar {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+
+  border-radius: 50%;
+
+  display: grid;
+  place-items: center;
+
+  background: var(--pfs-primary-light);
+  color: var(--pfs-primary-dark);
+
+  font-weight: 800;
+  font-size: 18px;
+}
+
+/* 사용자 정보 */
+
+.pfs-profile-info {
+  flex: 1;
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pfs-profile-info b {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.pfs-profile-info small {
+  font-size: 9px;
+  color: var(--pfs-muted);
+  overflow-wrap: anywhere;
+}
+
+/* 수정 버튼 */
+
+.pfs-profile-card > button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  border: 0;
+  background: transparent;
+
+  color: var(--pfs-muted);
+  font-size: 10px;
+}
+
+/* ==========================================
+   설정 그룹
+========================================== */
+
+.pfs-group > h2 {
+  margin: 5px 0 9px 4px;
+
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.pfs-group-card {
+  overflow: hidden;
+
+  background: white;
+
+  border: 1px solid var(--pfs-border);
+  border-radius: 16px;
+}
+
+/* 개별 설정 행 */
+
+.pfs-setting-row {
+  width: 100%;
+  min-height: 68px;
+
+  padding: 13px;
+
+  display: flex;
+  align-items: center;
+  gap: 11px;
+
+  text-align: left;
+
+  border: 0;
+  border-bottom: 1px solid var(--pfs-border);
+
+  background: white;
+  color: var(--pfs-text);
+}
+
+.pfs-group-card > .pfs-setting-row:last-child {
+  border-bottom: 0;
+}
+
+/* 아이콘 박스 */
+
+.pfs-setting-icon {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+
+  border-radius: 11px;
+
+  background: #fff0eb;
+  color: var(--pfs-primary);
+
+  display: grid;
+  place-items: center;
+}
+
+/* 설정 텍스트 */
+
+.pfs-setting-copy {
+  min-width: 0;
+  flex: 1;
+
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pfs-setting-copy b {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.pfs-setting-copy small {
+  color: var(--pfs-muted);
+
+  font-size: 9px;
+  line-height: 1.5;
+
+  overflow-wrap: anywhere;
+}
+
+.pfs-setting-row > svg {
+  color: #9c948f;
+}
+
+/* 언어 드롭다운 */
+
+.pfs-setting-row > select {
+  width: 85px;
+  max-width: 90px;
+
+  padding: 5px 2px;
+
+  border: 0;
+  outline-color: var(--pfs-primary);
+
+  background: transparent;
+  color: var(--pfs-muted);
+
+  font-size: 10px;
+}
+
+/* 위험 작업 */
+
+.pfs-setting-row.pfs-danger {
+  color: #dc2626;
+}
+
+.pfs-setting-row.pfs-danger .pfs-setting-icon {
+  color: #dc2626;
+  background: #fff0f0;
+}
+
+.pfs-inline-hint {
+  color: #b45309;
+  background: #fff8e7;
+
+  padding: 8px 13px;
+  font-size: 10px;
+}
+
+/* 돌아가기 링크 */
+
+.pfs-footer-link {
+  align-self: center;
+
+  color: var(--pfs-muted) !important;
+
+  font-size: 12px;
+  padding: 12px;
+}
+
+/* ==========================================
+   상태 안내
+========================================== */
+
+.pfs-notice {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  padding: 12px 13px;
+  border-radius: 12px;
+
+  color: #2563eb;
+  background: #eff6ff;
+
+  line-height: 1.6;
+  font-size: 11px;
+}
+
+.pfs-error {
+  color: #dc2626;
+  background: #fff0f0;
+}
+
+.pfs-success {
+  color: #15803d;
+  background: #ecfdf3;
+}
+
+.pfs-warn {
+  color: #8d580e;
+  background: #fff8e7;
+}
+
+.pfs-muted {
+  color: var(--pfs-muted);
+
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.pfs-eyebrow {
+  color: var(--pfs-primary-dark);
+
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+/* ==========================================
+   공통 버튼
+========================================== */
+
+.pfs-primary,
+.pfs-secondary {
+  width: 100%;
+  min-height: 51px;
+
+  padding: 11px 15px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  border-radius: 13px;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.pfs-primary {
+  color: white !important;
+
+  background: var(--pfs-primary);
+
+  border: 1px solid transparent;
+
+  box-shadow:
+    0 7px 18px rgba(245, 107, 74, 0.18);
+}
+
+.pfs-secondary {
+  color: var(--pfs-primary-dark) !important;
+
+  background: white;
+  border: 1px solid #f3d6cc;
+}
+
+.pfs-danger-btn {
+  background: #dc2626;
+}
+
+/* ==========================================
+   Figma 하단 시트
+========================================== */
+
+.pfs-modal-backdrop {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+
+  background: rgba(30, 25, 23, 0.55);
+}
+
+.pfs-sheet {
+  width: 100%;
+  max-width: 390px;
+  max-height: 85dvh;
+
+  overflow-y: auto;
+
+  padding:
+    10px 20px
+    max(25px, env(safe-area-inset-bottom));
+
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  border-radius: 25px 25px 0 0;
+
+  background: white;
+}
+
+/* 시트 상단 핸들 */
+
+.pfs-sheet-handle {
+  width: 38px;
+  height: 4px;
+
+  margin: 0 auto 4px;
+
+  border-radius: 4px;
+  background: #d6d0cc;
+}
+
+/* 시트 헤더 */
+
+.pfs-sheet-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.pfs-sheet-head h2 {
+  font-size: 20px;
+  margin-top: 4px;
+}
+
+.pfs-sheet-head button {
+  border: 0;
+  background: transparent;
+
+  color: var(--pfs-muted);
+  padding: 5px;
+}
+
+/* ==========================================
+   프로필 수정 폼
+========================================== */
+
+.pfs-sheet-form {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.pfs-sheet-form label,
+.pfs-confirm-label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pfs-sheet-form input,
+.pfs-confirm-label input {
+  display: block;
+
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+
+  padding: 9px 12px;
+
+  border: 1px solid #ded8d4;
+  border-radius: 11px;
+
+  outline-color: var(--pfs-primary);
+
+  background: white;
+  color: var(--pfs-text);
+}
+
+.pfs-sheet-form input:disabled {
+  background: #f7f5f3;
+}
+
+/* ==========================================
+   삭제 요청 선택 목록
+========================================== */
+
+.pfs-selection-list {
+  display: flex;
+  flex-direction: column;
+
+  border: 1px solid var(--pfs-border);
+  border-radius: 14px;
+
+  padding: 5px 12px;
+}
+
+.pfs-selection-list label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  padding: 12px 0;
+
+  border-bottom: 1px solid var(--pfs-border);
+
+  font-size: 11px;
+}
+
+.pfs-selection-list label:last-child {
+  border-bottom: 0;
+}
+
+.pfs-selection-list input {
+  width: 16px;
+  height: 16px;
+
+  accent-color: var(--pfs-primary);
+}
+
+.pfs-selection-list span {
+  flex: 1;
+}
+
+.pfs-selection-list small {
+  color: var(--pfs-muted);
+  font-size: 9px;
+}
+
+/* ==========================================
+   근무장소 페이지
+========================================== */
+
+.pfs-workplace-content {
+  padding-top: 21px;
+}
+
+/* Figma 2단계 표시 */
+
+.pfs-stepper {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  padding: 4px 0 6px;
+}
+
+.pfs-stepper > span:not(.pfs-step-line) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  white-space: nowrap;
+
+  font-size: 10px;
+  color: #b8432c;
+  font-weight: 700;
+}
+
+.pfs-stepper i {
+  display: grid;
+  place-items: center;
+
+  width: 24px;
+  height: 24px;
+
+  border-radius: 50%;
+
+  background: var(--pfs-primary);
+  color: white;
+
+  font-style: normal;
+  font-weight: 800;
+}
+
+.pfs-step-line {
+  flex: 1;
+  height: 1px;
+
+  background: #f2c7bb;
+}
+
+/* ==========================================
+   근무정보 제목
+========================================== */
+
+.pfs-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pfs-heading h1 {
+  font-size: 25px;
+  letter-spacing: -0.05em;
+  line-height: 1.3;
+}
+
+.pfs-heading > p:last-child {
+  color: var(--pfs-muted);
+
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* ==========================================
+   근무장소 입력 카드
+========================================== */
+
+.pfs-workplace-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pfs-workplace-card {
+  padding: 17px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.pfs-workplace-card h2 {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+/* Figma 위치 안내 카드 */
+
+.pfs-map-placeholder {
+  min-height: 132px;
+
+  border-radius: 13px;
+
+  background: linear-gradient(
+    45deg,
+    #eee9e5,
+    #f9f5f2
+  );
+
+  color: var(--pfs-primary);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+
+  text-align: center;
+  padding: 15px;
+}
+
+.pfs-map-placeholder b {
+  color: var(--pfs-text);
+  font-size: 11px;
+}
+
+.pfs-map-placeholder span {
+  color: var(--pfs-muted);
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+
+.pfs-map-placeholder small {
+  color: #aaa19b;
+  font-size: 8px;
+}
+
+/* ==========================================
+   근무장소 및 사업장 입력 필드
+========================================== */
+
+.pfs-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  min-width: 0;
+}
+
+.pfs-field input {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+
+  padding: 10px 13px;
+
+  border: 1px solid #ded8d4;
+  border-radius: 12px;
+
+  background: white;
+  color: var(--pfs-text);
+
+  outline-color: var(--pfs-primary);
+
+  font-size: 12px;
+}
+
+/* 위도 / 경도 2열 */
+
+.pfs-coordinate-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.pfs-coordinate-row > label {
+  min-width: 0;
+}
+
+/* ==========================================
+   OCR 안내
+========================================== */
+
+.pfs-ocr-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.pfs-ocr-row > small {
+  color: var(--pfs-muted);
+
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.pfs-chip {
+  display: inline-flex;
+  flex: 0 0 auto;
+
+  padding: 5px 9px;
+
+  background: #eff6ff;
+  color: #2563eb;
+
+  border-radius: 99px;
+
+  font-size: 9px;
+  font-weight: 700;
+}
+
+/* 변경 취소 */
+
+.pfs-reset {
+  align-self: center;
+
+  border: 0;
+  background: transparent;
+
+  color: var(--pfs-muted);
+
+  padding: 10px;
+  font-size: 11px;
+}
+
+/* 포커스 표시 */
+
+.pfs-screen :focus-visible {
+  outline: 2px solid var(--pfs-primary);
+  outline-offset: 2px;
+}

@@ -1,204 +1,228 @@
 
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { apiRequest } from "../../api/client";
 
-const STATUS_LABELS = {
+import {
+  getMonthlyReport,
+  getEvidences,
+} from "../../api/report";
+
+import {
+  FeatureBadge,
+  FeatureIcon,
+  FeatureNotice,
+  displayKst,
+  displayMinutes,
+  errorText,
+  unwrap,
+} from "../../components/WorkerFeatureUI";
+
+import "../../styles/figma-finance.css";
+
+// 한국 시간 기준 현재 월
+function currentMonth() {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+  }).formatToParts(new Date());
+
+  const year = parts.find(
+    (item) => item.type === "year"
+  )?.value;
+
+  const month = parts.find(
+    (item) => item.type === "month"
+  )?.value;
+
+  return `${year}-${month}`;
+}
+
+function money(value) {
+  if (
+    value == null ||
+    !Number.isFinite(Number(value))
+  ) {
+    return "미제공";
+  }
+
+  return `${Number(value).toLocaleString("ko-KR")}원`;
+}
+
+function dateLabel(value) {
+  if (!value) return "날짜 미확인";
+
+  const match = String(value).match(
+    /\d{4}-(\d{2})-(\d{2})/
+  );
+
+  if (match) {
+    return `${Number(match[1])}월 ${Number(match[2])}일`;
+  }
+
+  return String(value);
+}
+
+function extractEvidences(response) {
+  const data = unwrap(response);
+
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  if (Array.isArray(data?.evidences)) {
+    return data.evidences;
+  }
+
+  if (Array.isArray(data?.content)) {
+    return data.content;
+  }
+
+  return null;
+}
+
+const statusLabels = {
   MATCH: "일치",
   MISMATCH: "불일치",
   UNCERTAIN: "확인 필요",
+  NORMAL: "완료",
+  FINISHED: "완료",
+  EDITED: "수정됨",
+  MISSING: "누락",
 };
 
-function getCurrentMonth() {
-  const now = new Date();
-
-  return [
-    now.getFullYear(),
-    String(now.getMonth() + 1).padStart(2, "0"),
-  ].join("-");
-}
-
-function moveMonth(value, amount) {
-  const [year, month] = value.split("-").map(Number);
-  const date = new Date(year, month - 1 + amount, 1);
-
-  return [
-    date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, "0"),
-  ].join("-");
-}
-
-function formatMinutes(value) {
-  if (value == null) return "미확인";
-
-  const minutes = Number(value);
-
-  if (!Number.isFinite(minutes) || minutes < 0) {
-    return "미확인";
-  }
-
-  const hours = Math.floor(minutes / 60);
-  const remainder = Math.floor(minutes % 60);
-
-  return `${hours}시간 ${remainder}분`;
-}
-
-function formatMoney(value) {
-  if (value == null) return "미확인";
-
-  const amount = Number(value);
-
-  return Number.isFinite(amount)
-    ? `${amount.toLocaleString("ko-KR")}원`
-    : "미확인";
-}
-
-function getErrorMessage(error) {
-  if (error?.status === 401) {
-    return "로그인 인증이 필요합니다.";
-  }
-
-  if (error?.status === 404) {
-    return "선택한 월의 리포트를 찾을 수 없습니다.";
-  }
-
-  return error instanceof Error
-    ? error.message
-    : "월별 리포트를 불러오지 못했습니다.";
-}
-
-function RecordList({ title, records }) {
-  return (
-    <section style={{ marginTop: 24 }}>
-      <h3>{title}</h3>
-
-      {records.length === 0 ? (
-        <p>제공된 기록이 없습니다.</p>
-      ) : (
-        <ul>
-          {records.map((record, index) => (
-            <li
-              key={record?.id ?? record?.recordId ?? index}
-              style={{
-                padding: 12,
-                marginBottom: 12,
-                border: "1px solid #ddd",
-              }}
-            >
-              {record?.date && (
-                <p>날짜: {record.date}</p>
-              )}
-
-              {record?.workedMinutes != null && (
-                <p>
-                  실근무시간:{" "}
-                  {formatMinutes(record.workedMinutes)}
-                </p>
-              )}
-
-              {record?.breakMinutes != null && (
-                <p>
-                  휴게시간:{" "}
-                  {formatMinutes(record.breakMinutes)}
-                </p>
-              )}
-
-              <details>
-                <summary>기록 데이터 확인</summary>
-
-                <pre
-                  style={{
-                    whiteSpace: "pre-wrap",
-                    overflowWrap: "anywhere",
-                    fontSize: 12,
-                  }}
-                >
-                  {JSON.stringify(record, null, 2)}
-                </pre>
-              </details>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
-  );
-}
+const evidenceLabels = {
+  CONTRACT: "근로계약서",
+  CLOCK_IN_PHOTO: "출근 인증 사진",
+  CLOCK_OUT_PHOTO: "퇴근 인증 사진",
+  GPS: "GPS 기록",
+  TIMESTAMP: "서버 타임스탬프",
+  SALARY_STATEMENT: "급여명세서",
+};
 
 export default function Reports() {
-  const [month, setMonth] = useState(getCurrentMonth);
-  const [reloadKey, setReloadKey] = useState(0);
+  // =====================================
+  // 탭 및 조회 월
+  // =====================================
+
+  const [tab, setTab] = useState("work");
+  const [month, setMonth] = useState(currentMonth);
 
   const [report, setReport] = useState(null);
+  const [evidences, setEvidences] = useState([]);
+
   const [loading, setLoading] = useState(true);
+  const [evidenceLoading, setEvidenceLoading] =
+    useState(false);
+
   const [error, setError] = useState("");
+  const [evidenceError, setEvidenceError] =
+    useState("");
+
+  const [reload, setReload] = useState(0);
+
+  const [
+    selectedEvidence,
+    setSelectedEvidence,
+  ] = useState(null);
+
+  // =====================================
+  // 월별 근무·임금 리포트 API
+  // =====================================
 
   useEffect(() => {
-    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
-      return;
-    }
-
     let active = true;
 
-    async function loadReport() {
-      try {
-        const response = await apiRequest(
-          "report",
-          "getMonthly",
-          {
-            query: { month },
-          }
-        );
+    setLoading(true);
+    setReport(null);
+    setError("");
 
+    getMonthlyReport({ month })
+      .then((response) => {
         if (!active) return;
 
-        const result = response?.data ?? response;
+        const data = unwrap(response);
 
         if (
-          !result ||
-          typeof result !== "object" ||
-          Array.isArray(result)
+          !data ||
+          typeof data !== "object" ||
+          Array.isArray(data)
         ) {
           throw new Error(
             "월별 리포트 응답 형식이 올바르지 않습니다."
           );
         }
 
-        setReport(result);
-        setError("");
-      } catch (err) {
-        if (!active) return;
-
-        setReport(null);
-        setError(getErrorMessage(err));
-      } finally {
-        if (active) setLoading(false);
-      }
-    }
-
-    loadReport();
+        setReport(data);
+      })
+      .catch((err) => {
+        if (active) {
+          setError(errorText(err));
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
 
     return () => {
       active = false;
     };
-  }, [month, reloadKey]);
+  }, [month, reload]);
 
-  function changeMonth(nextMonth) {
-    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(nextMonth)) {
-      return;
-    }
+  // =====================================
+  // 증거 목록 API
+  // =====================================
 
-    setMonth(nextMonth);
-    setReport(null);
-    setError("");
-    setLoading(true);
-  }
+  useEffect(() => {
+    if (tab !== "evidence") return;
 
-  function refresh() {
-    setReport(null);
-    setError("");
-    setLoading(true);
-    setReloadKey((previous) => previous + 1);
-  }
+    let active = true;
+
+    setEvidenceLoading(true);
+    setEvidenceError("");
+
+    getEvidences({
+      month,
+      page: 1,
+      size: 100,
+    })
+      .then((response) => {
+        if (!active) return;
+
+        const list = extractEvidences(
+          response
+        );
+
+        if (!list) {
+          throw new Error(
+            "증거 목록 응답 배열을 확인해 주세요."
+          );
+        }
+
+        setEvidences(list);
+      })
+      .catch((err) => {
+        if (active) {
+          setEvidenceError(errorText(err));
+          setEvidences([]);
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setEvidenceLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [month, tab, reload]);
+
+  // =====================================
+  // 서버 응답 구조
+  // =====================================
 
   const work = report?.work;
   const wage = report?.wage;
@@ -211,266 +235,559 @@ export default function Reports() {
     ? work.edits
     : [];
 
-  const extraChecks = Array.isArray(wage?.extraChecks)
+  const extraChecks = Array.isArray(
+    wage?.extraChecks
+  )
     ? wage.extraChecks
     : [];
 
+  // 서버가 날짜를 제공한 증거는
+  // 선택 월에 맞춰 표시
+  const monthlyEvidence = evidences.filter(
+    (item) => {
+      const stamp =
+        item?.occurredAt ??
+        item?.createdAt ??
+        item?.workDate ??
+        item?.month;
+
+      return (
+        !stamp ||
+        String(stamp).startsWith(month)
+      );
+    }
+  );
+
+  // 증거 유형별 그룹화
+  const grouped = monthlyEvidence.reduce(
+    (map, item) => {
+      const type =
+        item.type ??
+        item.evidenceType ??
+        "OTHER";
+
+      if (!map.has(type)) {
+        map.set(type, []);
+      }
+
+      map.get(type).push(item);
+
+      return map;
+    },
+    new Map()
+  );
+
+  function handleMonthChange(value) {
+    if (
+      /^\d{4}-(0[1-9]|1[0-2])$/.test(value)
+    ) {
+      setMonth(value);
+      setSelectedEvidence(null);
+    }
+  }
+
   return (
-    <main
-      style={{
-        maxWidth: 720,
-        margin: "0 auto",
-        padding: 24,
-      }}
-    >
-      <h1>월별 근무·임금 리포트</h1>
+    <div className="efin-page">
 
-      <p>
-        근무기록과 임금 비교 결과를
-        한 달 단위로 확인할 수 있습니다.
-      </p>
+      {/* 상단바 */}
+      <header className="efin-header">
+        <strong>월별 리포트</strong>
 
-      {/* 1. 월 선택 */}
-      <section style={{ marginBottom: 28 }}>
-        <h2>1. 조회 기간</h2>
+        <input
+          type="month"
+          aria-label="리포트 조회 월"
+          value={month}
+          onChange={(event) =>
+            handleMonthChange(
+              event.target.value
+            )
+          }
+        />
+      </header>
 
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 8,
-          }}
-        >
-          <button
-            type="button"
-            onClick={() =>
-              changeMonth(moveMonth(month, -1))
-            }
-          >
-            이전 달
-          </button>
+      <main className="efin-content">
 
-          <input
-            type="month"
-            aria-label="리포트 조회 월"
-            value={month}
-            onChange={(event) =>
-              changeMonth(event.target.value)
-            }
-          />
+        {/* =================================
+            Figma 3개 탭
+        ================================= */}
 
-          <button
-            type="button"
-            onClick={() =>
-              changeMonth(moveMonth(month, 1))
-            }
-          >
-            다음 달
-          </button>
+        <div className="efin-segment">
+          {[
+            ["work", "근무"],
+            ["pay", "임금 비교"],
+            ["evidence", "증거 목록"],
+          ].map(([key, label]) => (
+            <button
+              type="button"
+              key={key}
+              className={
+                tab === key ? "active" : ""
+              }
+              onClick={() => setTab(key)}
+            >
+              {label}
+            </button>
+          ))}
         </div>
 
-        <button
-          type="button"
-          onClick={refresh}
-          disabled={loading}
-          style={{ marginTop: 12 }}
-        >
-          새로고침
-        </button>
-      </section>
+        {loading && (
+          <FeatureNotice>
+            선택한 월의 리포트를 불러오는 중입니다.
+          </FeatureNotice>
+        )}
 
-      {loading && (
-        <p role="status">
-          월별 리포트를 불러오는 중입니다...
-        </p>
-      )}
+        {error && (
+          <FeatureNotice tone="error">
+            {error}
+          </FeatureNotice>
+        )}
 
-      {error && (
-        <p role="alert" style={{ color: "red" }}>
-          {error}
-        </p>
-      )}
+        {/* =================================
+            1. 근무 탭
+        ================================= */}
 
-      {!loading && !error && report && (
-        <>
-          {/* 2. 근무 요약 */}
-          <section style={{ marginBottom: 28 }}>
-            <h2>2. 근무 요약</h2>
+        {tab === "work" && !loading && (
+          <>
+            <section className="efin-card efin-report-total">
+              <span>
+                {Number(month.slice(5))}월 총 실근무시간
+              </span>
 
-            <p>
-              조회 월: {report.month ?? month}
-            </p>
+              <h1>
+                {displayMinutes(
+                  work?.totalWorkedMinutes
+                )}
+              </h1>
 
-            <p>
-              총 근무일수:{" "}
-              {work?.workDays != null
-                ? `${work.workDays}일`
-                : "미확인"}
-            </p>
+              <div>
+                <span>
+                  휴게시간
 
-            <p>
-              총 실근무시간:{" "}
-              {formatMinutes(work?.totalWorkedMinutes)}
-            </p>
+                  <b>
+                    {displayMinutes(
+                      work?.totalBreakMinutes
+                    )}
+                  </b>
+                </span>
 
-            <p>
-              총 휴게시간:{" "}
-              {formatMinutes(work?.totalBreakMinutes)}
-            </p>
+                <span>
+                  수정 이력
+                  <b>{edits.length}건</b>
+                </span>
+              </div>
+            </section>
 
-            {!work && (
-              <p>
-                이 기간의 근무 요약 데이터가 없습니다.
-              </p>
-            )}
+            {/* 날짜별 근무기록 */}
+            {days.length > 0 ? (
+              days.map((item, index) => {
+                const id =
+                  item.recordId ??
+                  item.id;
 
-            <Link to="/attendance/history">
-              근무기록 조회 화면으로 이동
-            </Link>
+                const date =
+                  item.workDate ??
+                  item.date;
 
-            <RecordList
-              title="일별 근무 내역"
-              records={days}
-            />
+                const content = (
+                  <>
+                    <span className="efin-daybox">
+                      {String(
+                        date ?? ""
+                      ).slice(-2) || "-"}
+                    </span>
 
-            <RecordList
-              title="근무기록 수정 이력"
-              records={edits}
-            />
-          </section>
+                    <span className="efin-row-text">
+                      <b>{dateLabel(date)}</b>
 
-          <hr />
+                      <small>
+                        {item.clockInAt
+                          ? displayKst(item.clockInAt)
+                          : "출근 미기록"}
 
-          {/* 3. 임금 비교 */}
-          <section style={{ marginTop: 28 }}>
-            <h2>3. 임금 비교 요약</h2>
+                        {" · "}
 
-            {wage == null ? (
-              <>
-                <p>
-                  아직 이 월의 임금 비교 결과가 없습니다.
-                </p>
+                        {item.clockOutAt
+                          ? displayKst(item.clockOutAt)
+                          : "퇴근 누락"}
 
-                <p>
-                  근로계약서, 근무기록,
-                  급여명세서의 상태를 확인한 후
-                  임금 비교를 진행해 주세요.
-                </p>
+                        {" · 휴게 "}
 
-                <Link to="/salary">
-                  급여 비교 진행하기
-                </Link>
-              </>
-            ) : (
-              <>
-                <p>
-                  비교 상태:{" "}
-                  {STATUS_LABELS[wage.status] ??
-                    wage.status ??
-                    "미확인"}
-                </p>
+                        {displayMinutes(
+                          item.breakMinutes
+                        )}
+                      </small>
+                    </span>
 
-                <p>
-                  예상 임금:{" "}
-                  {formatMoney(wage.expectedAmount)}
-                </p>
+                    <FeatureBadge
+                      tone={
+                        item.status === "MISSING" ||
+                        item.status === "ISSUE"
+                          ? "warning"
+                          : "success"
+                      }
+                    >
+                      {statusLabels[item.status] ??
+                        (item.clockOutAt
+                          ? "완료"
+                          : "확인 필요")}
+                    </FeatureBadge>
+                  </>
+                );
 
-                <p>
-                  실제 지급액:{" "}
-                  {formatMoney(wage.actualAmount)}
-                </p>
-
-                <p>
-                  차이 금액:{" "}
-                  {formatMoney(wage.differenceAmount)}
-                </p>
-
-                {wage.comparisonId ? (
+                // ID가 있어야 상세 이동 가능
+                return id ? (
                   <Link
-                    to={`/salary/${encodeURIComponent(
-                      wage.comparisonId
+                    className="efin-report-row"
+                    key={id}
+                    to={`/attendance/${encodeURIComponent(
+                      id
                     )}`}
                   >
-                    임금 비교 상세 보기
+                    {content}
                   </Link>
                 ) : (
-                  <Link to="/salary">
-                    급여 관리 화면으로 이동
-                  </Link>
-                )}
-
-                <section style={{ marginTop: 20 }}>
-                  <h3>추가 확인 사항</h3>
-
-                  {extraChecks.length === 0 ? (
-                    <p>
-                      서버에서 별도의 추가 확인 사항을
-                      제공하지 않았습니다.
-                    </p>
-                  ) : (
-                    <ul>
-                      {extraChecks.map((item, index) => (
-                        <li key={index}>
-                          {typeof item === "string"
-                            ? item
-                            : item?.message ??
-                              JSON.stringify(item)}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </section>
-              </>
+                  <div
+                    className="efin-report-row"
+                    key={`${date}-${index}`}
+                  >
+                    {content}
+                  </div>
+                );
+              })
+            ) : (
+              <section className="efin-card">
+                <p className="efin-muted">
+                  해당 월의 일별 근무기록이 제공되지 않았습니다.
+                </p>
+              </section>
             )}
-          </section>
 
-          <hr />
+            {/* 근무기록 수정 이력 */}
+            {edits.length > 0 && (
+              <section className="efin-card">
+                <h3>근무기록 수정 이력</h3>
 
-          {/* 4. 증거 요약 */}
-          <section style={{ marginTop: 28 }}>
-            <h2>4. 증거 요약</h2>
+                {edits.map((item, index) => (
+                  <p
+                    className="efin-edit-line"
+                    key={item.id ?? index}
+                  >
+                    {dateLabel(
+                      item.workDate ??
+                        item.date
+                    )}
 
-            <p>
-              등록된 증거:{" "}
-              {report.evidenceCount != null
-                ? `${report.evidenceCount}건`
-                : "미확인"}
-            </p>
+                    {" · "}
 
-            <Link to="/reports/evidences">
-              증거 목록 확인하기
-            </Link>
-          </section>
+                    {item.reason ??
+                      item.description ??
+                      "수정 내역 확인 필요"}
+                  </p>
+                ))}
+              </section>
+            )}
 
-          {/* 법률 안내 */}
-          {report.disclaimer && (
-            <section style={{ marginTop: 28 }}>
-              <h2>안내 사항</h2>
-              <p>{report.disclaimer}</p>
-            </section>
-          )}
-
-          <details style={{ marginTop: 28 }}>
-            <summary>리포트 원본 응답 확인</summary>
-
-            <pre
-              style={{
-                whiteSpace: "pre-wrap",
-                overflowWrap: "anywhere",
-                padding: 12,
-                background: "#f5f5f5",
-              }}
+            <Link
+              className="efin-text-link"
+              to="/attendance/history"
             >
-              {JSON.stringify(report, null, 2)}
-            </pre>
-          </details>
-        </>
-      )}
+              전체 근무기록 확인
+            </Link>
+          </>
+        )}
 
-      <p style={{ marginTop: 32 }}>
-        <Link to="/home">홈으로 이동</Link>
-      </p>
-    </main>
+        {/* =================================
+            2. 임금 비교 탭
+        ================================= */}
+
+        {tab === "pay" && !loading && (
+          <>
+            <section className="efin-card efin-report-total efin-warning-total">
+              <span>
+                예상·실제 임금 차이
+              </span>
+
+              <h1>
+                {money(
+                  wage?.differenceAmount
+                )}
+              </h1>
+
+              <div>
+                <span>
+                  예상
+
+                  <b>
+                    {money(
+                      wage?.expectedAmount
+                    )}
+                  </b>
+                </span>
+
+                <span>
+                  실제
+
+                  <b>
+                    {money(
+                      wage?.actualAmount
+                    )}
+                  </b>
+                </span>
+              </div>
+            </section>
+
+            <section className="efin-card">
+              <h3>
+                추가 확인이 필요한 항목
+              </h3>
+
+              {extraChecks.length > 0 ? (
+                <div className="efin-check-list">
+                  {extraChecks.map(
+                    (item, index) => (
+                      <span key={index}>
+                        <FeatureIcon
+                          name="alert"
+                          size={16}
+                        />
+
+                        {typeof item === "string"
+                          ? item
+                          : item?.message ??
+                            item?.title ??
+                            "확인 필요"}
+                      </span>
+                    )
+                  )}
+                </div>
+              ) : (
+                <p className="efin-muted">
+                  {wage
+                    ? "서버에서 별도의 추가 확인 사항을 제공하지 않았습니다."
+                    : "아직 해당 월의 임금 비교 내역이 없습니다."}
+                </p>
+              )}
+
+              {wage?.status && (
+                <p className="efin-muted">
+                  비교 상태:{" "}
+                  {statusLabels[wage.status] ??
+                    wage.status}
+                </p>
+              )}
+            </section>
+
+            <FeatureNotice tone="warning">
+              임금 차이는 법적 체불이 확정되었다는 뜻이 아닙니다.
+              최종 판단은 전문가 또는 노동청 확인이 필요합니다.
+            </FeatureNotice>
+
+            <Link
+              className="efin-main-button"
+              to={
+                wage?.comparisonId
+                  ? `/salary/${encodeURIComponent(
+                      wage.comparisonId
+                    )}`
+                  : "/salary"
+              }
+            >
+              급여 비교 상세 보기
+            </Link>
+
+            <Link
+              className="efin-outline-button"
+              to="/petitions/new"
+            >
+              진정서 초안 만들기
+            </Link>
+          </>
+        )}
+
+        {/* =================================
+            3. 증거 목록 탭
+        ================================= */}
+
+        {tab === "evidence" && (
+          <>
+            {evidenceLoading && (
+              <FeatureNotice>
+                서버에 저장된 증거를 조회 중입니다.
+              </FeatureNotice>
+            )}
+
+            {evidenceError && (
+              <FeatureNotice tone="error">
+                {evidenceError}
+              </FeatureNotice>
+            )}
+
+            {!evidenceLoading &&
+              !evidenceError &&
+              grouped.size === 0 && (
+                <section className="efin-card">
+                  <p className="efin-muted">
+                    해당 기간에 조회된 증거가 없습니다.
+                  </p>
+                </section>
+              )}
+
+            <div className="efin-evidence-list">
+              {[...grouped].map(
+                ([type, list]) => (
+                  <button
+                    type="button"
+                    key={type}
+                    onClick={() =>
+                      setSelectedEvidence({
+                        type,
+                        list,
+                      })
+                    }
+                  >
+                    <span className="efin-icon">
+                      <FeatureIcon
+                        name={
+                          type.includes("PHOTO")
+                            ? "camera"
+                            : type === "GPS"
+                            ? "pin"
+                            : type === "TIMESTAMP"
+                            ? "clock"
+                            : "file"
+                        }
+                      />
+                    </span>
+
+                    <span>
+                      <b>
+                        {evidenceLabels[type] ??
+                          type}
+                      </b>
+
+                      <small>
+                        {list.length}개 증거
+                      </small>
+                    </span>
+
+                    <FeatureIcon
+                      name="chevron"
+                      size={17}
+                    />
+                  </button>
+                )
+              )}
+            </div>
+
+            <Link
+              className="efin-text-link"
+              to="/reports/evidences"
+            >
+              전체 증거 목록 확인
+            </Link>
+          </>
+        )}
+
+        {/* 새로고침 */}
+        <button
+          type="button"
+          className="efin-refresh"
+          onClick={() =>
+            setReload((value) => value + 1)
+          }
+        >
+          <FeatureIcon
+            name="refresh"
+            size={16}
+          />
+
+          리포트 새로고침
+        </button>
+      </main>
+
+      {/* 증거 목록 하단 상세 시트 */}
+      {selectedEvidence && (
+        <div
+          className="efin-overlay"
+          onClick={() =>
+            setSelectedEvidence(null)
+          }
+        >
+          <section
+            className="efin-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-label="증거 상세"
+            onClick={(event) =>
+              event.stopPropagation()
+            }
+          >
+            <div className="efin-handle" />
+
+            <div className="efin-sheet-title">
+              <h2>
+                {evidenceLabels[
+                  selectedEvidence.type
+                ] ??
+                  selectedEvidence.type}
+              </h2>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setSelectedEvidence(null)
+                }
+              >
+                닫기
+              </button>
+            </div>
+
+            <div className="efin-evidence-items">
+              {selectedEvidence.list.map(
+                (item, index) => (
+                  <div
+                    key={item.id ?? index}
+                  >
+                    <b>
+                      {item.title ??
+                        evidenceLabels[
+                          item.type
+                        ] ??
+                        `증거 ${index + 1}`}
+                    </b>
+
+                    <small>
+                      {item.occurredAt ??
+                        item.createdAt ??
+                        "저장 시각 미제공"}
+                    </small>
+
+                    {item.fileUrl && (
+                      <a
+                        href={item.fileUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        증거 파일 보기
+                      </a>
+                    )}
+
+                    {item.recordId && (
+                      <Link
+                        to={`/attendance/${encodeURIComponent(
+                          item.recordId
+                        )}`}
+                      >
+                        근무기록 상세 보기
+                      </Link>
+                    )}
+                  </div>
+                )
+              )}
+            </div>
+          </section>
+        </div>
+      )}
+    </div>
   );
 }

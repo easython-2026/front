@@ -1,395 +1,198 @@
 
-import { useEffect, useRef, useState } from "react";
-import { Link, useParams } from "react-router";
-
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router";
 import useGeolocation from "../../hooks/useGeolocation";
-
-// 실제 API Request/Response 명세 확인 전까지
-// 출퇴근 기록 서버 전송 비활성화
-const API_CONTRACT_VERIFIED = false;
+import { checkLocation, clockIn, clockOut } from "../../api/attendance";
+import { FeatureButton, FeatureIcon, FeatureNotice, displayKst, errorText, unwrap } from "../../components/WorkerFeatureUI";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 export default function AttendanceCapture() {
   const { type } = useParams();
-
-  const isClockIn = type === "clock-in";
-  const isClockOut = type === "clock-out";
-  const isValidType = isClockIn || isClockOut;
-
-  const title = isClockIn ? "출근" : "퇴근";
-
-  // ========================================
-  // GPS 상태
-  // ========================================
-  const {
-    location,
-    loading: gpsLoading,
-    error: gpsError,
-    getCurrentLocation,
-    resetLocation,
-  } = useGeolocation();
-
-  // ========================================
-  // 사진 상태
-  // ========================================
+  const navigate = useNavigate();
+  const isIn = type === "clock-in";
+  const valid = isIn || type === "clock-out";
+  const title = isIn ? "출근" : "퇴근";
+  const action = isIn ? "CLOCK_IN" : "CLOCK_OUT";
+  const { getCurrentLocation, loading: locating, error: positionError } = useGeolocation();
+  const [gps, setGps] = useState("checking");
+  const [verificationToken, setVerificationToken] = useState("");
+  const [gpsAccuracy, setGpsAccuracy] = useState(null);
   const [photo, setPhoto] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState("");
-  const [photoError, setPhotoError] = useState("");
+  const [preview, setPreview] = useState("");
+  const [cameraError, setCameraError] = useState("");
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [receipt, setReceipt] = useState(null);
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const previewRef = useRef("");
 
-  // 생성한 Object URL을 보관
-  const previewUrlRef = useRef(null);
-
-  // ========================================
-  // 서버 요청 상태
-  // ========================================
-  const [serverMessage, setServerMessage] =
-    useState("");
-
-  // ========================================
-  // 페이지 종료 시 이미지 URL 정리
-  // ========================================
-  useEffect(() => {
-    return () => {
-      if (previewUrlRef.current) {
-        URL.revokeObjectURL(previewUrlRef.current);
-        previewUrlRef.current = null;
-      }
-    };
+  const releaseCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) videoRef.current.srcObject = null;
   }, []);
 
-  // ========================================
-  // GPS 위치 확인
-  // ========================================
-  async function handleLocationCheck() {
-    setServerMessage("");
-
-    try {
-      await getCurrentLocation();
-    } catch {
-      // GPS 오류는 useGeolocation에서 처리
-    }
-  }
-
-  // ========================================
-  // 사진 촬영 및 파일 선택
-  // ========================================
-  function handlePhotoChange(event) {
-    const file = event.target.files?.[0];
-
-    // 동일한 사진을 재선택할 수 있도록 초기화
-    event.target.value = "";
-
-    if (!file) return;
-
-    setPhotoError("");
-    setServerMessage("");
-
-    // 이미지 파일인지 확인
-    if (!file.type.startsWith("image/")) {
-      setPhotoError(
-        "이미지 파일만 선택할 수 있습니다."
-      );
-      return;
-    }
-
-    // 파일 크기 검사
-    if (file.size > MAX_FILE_SIZE) {
-      setPhotoError(
-        "10MB 이하의 사진을 선택해 주세요."
-      );
-      return;
-    }
-
-    // 기존 이미지 URL 정리
-    if (previewUrlRef.current) {
-      URL.revokeObjectURL(previewUrlRef.current);
-      previewUrlRef.current = null;
-    }
-
-    // 새 이미지 URL 생성
-    const newUrl = URL.createObjectURL(file);
-
-    previewUrlRef.current = newUrl;
-
-    setPhoto(file);
-    setPreviewUrl(newUrl);
-  }
-
-  // ========================================
-  // 사진 삭제 및 재촬영
-  // ========================================
-  function handleRemovePhoto() {
-    // 기존 URL 메모리 해제
-    if (previewUrlRef.current) {
-      URL.revokeObjectURL(previewUrlRef.current);
-      previewUrlRef.current = null;
-    }
-
+  const clearPhoto = useCallback(() => {
+    if (previewRef.current) URL.revokeObjectURL(previewRef.current);
+    previewRef.current = "";
+    setPreview("");
     setPhoto(null);
-    setPreviewUrl("");
-    setPhotoError("");
-    setServerMessage("");
-  }
+  }, []);
 
-  // ========================================
-  // GPS 초기화
-  // ========================================
-  function handleResetLocation() {
-    resetLocation();
-    setServerMessage("");
-  }
-
-  // ========================================
-  // 출퇴근 기록 요청 전 검증
-  // ========================================
-  function validateCapture() {
-    if (!location) {
-      return "GPS 위치를 먼저 확인해 주세요.";
+  const verifyGps = useCallback(async () => {
+    setGps("checking");
+    setError("");
+    setVerificationToken("");
+    clearPhoto();
+    try {
+      const coords = await getCurrentLocation();
+      setGpsAccuracy(coords.accuracy);
+      // 이 요청 필드는 Figma 프로토타입의 action과 브라우저 GPS 좌표를 사용합니다.
+      // 서버가 사용하는 필드명이 다르다면 checkLocation()의 body만 API 명세에 맞춰 조정해야 합니다.
+      const result = unwrap(await checkLocation({
+        action,
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+        accuracy: coords.accuracy,
+      }));
+      if (result?.verified !== true || !result?.verificationToken) {
+        throw new Error("서버에서 근무장소 인증 완료 토큰을 받지 못했습니다.");
+      }
+      setVerificationToken(result.verificationToken);
+      setGps("success");
+    } catch (e) {
+      setGps(e?.message?.includes("권한") ? "denied" : "failed");
+      setError(errorText(e));
     }
+  }, [getCurrentLocation, action, clearPhoto]);
 
-    if (!photo) {
-      return "현장 사진을 촬영해 주세요.";
+  useEffect(() => {
+    if (valid) verifyGps();
+  }, [valid, verifyGps]);
+
+  useEffect(() => {
+    if (gps !== "success" || photo || receipt) return undefined;
+    let cancelled = false;
+    async function openCamera() {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setCameraError("실시간 카메라를 사용할 수 없습니다. 사진 촬영 버튼에서 카메라를 실행해 주세요.");
+        return;
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" } }, audio: false,
+        });
+        if (cancelled) { stream.getTracks().forEach((t) => t.stop()); return; }
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play().catch(() => {});
+        }
+        setCameraError("");
+      } catch {
+        setCameraError("실시간 카메라 권한을 허용하거나 사진 촬영 버튼으로 이미지를 선택해 주세요.");
+      }
     }
+    openCamera();
+    return () => { cancelled = true; releaseCamera(); };
+  }, [gps, photo, receipt, releaseCamera]);
 
-    if (!API_CONTRACT_VERIFIED) {
-      return (
-        "백엔드 API 요청 명세 확인이 필요합니다. " +
-        "현재 실제 출퇴근 기록은 전송하지 않습니다."
-      );
-    }
+  useEffect(() => () => {
+    releaseCamera();
+    if (previewRef.current) URL.revokeObjectURL(previewRef.current);
+  }, [releaseCamera]);
 
-    return null;
-  }
-
-  // ========================================
-  // 출퇴근 기록 처리
-  // ========================================
-  function handleSubmit() {
-    const validationError = validateCapture();
-
-    if (validationError) {
-      setServerMessage(validationError);
+  function usePhoto(file) {
+    if (!file) return;
+    if (!file.type.startsWith("image/") || file.size > MAX_FILE_SIZE) {
+      setError("10MB 이하의 이미지 파일만 촬영·선택할 수 있습니다.");
       return;
     }
-
-    // API 상세 명세 확인 후 구현 예정
-    // 1. POST /api/v1/attendance/location-check
-    // 2. 사업장 위치 인증 성공 확인
-    // 3. 현장 사진 업로드
-    // 4. POST /api/v1/attendance/clock-in
-    //    또는 /clock-out
-
-    setServerMessage(
-      "출퇴근 API 연동이 아직 완료되지 않았습니다."
-    );
+    if (previewRef.current) URL.revokeObjectURL(previewRef.current);
+    const url = URL.createObjectURL(file);
+    previewRef.current = url;
+    setPreview(url);
+    setPhoto(file);
+    setError("");
+    releaseCamera();
   }
 
-  // ========================================
-  // 잘못된 URL 처리
-  // ========================================
-  if (!isValidType) {
-    return (
-      <main style={{ padding: 24 }}>
-        <h1>잘못된 출퇴근 유형입니다.</h1>
-
-        <Link to="/attendance">
-          출퇴근 관리로 돌아가기
-        </Link>
-      </main>
-    );
+  function takePhoto() {
+    if (gps !== "success" || !verificationToken) return;
+    const video = videoRef.current;
+    if (!video?.videoWidth || !streamRef.current) {
+      fileInputRef.current?.click();
+      return;
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext("2d")?.drawImage(video, 0, 0);
+    canvas.toBlob((blob) => {
+      if (blob) usePhoto(new File([blob], "workplace.jpg", { type: "image/jpeg" }));
+      else setError("사진 처리에 실패했습니다. 다시 촬영해 주세요.");
+    }, "image/jpeg", 0.88);
   }
 
-  const readyForCapture = Boolean(
-    location && photo
-  );
+  async function save() {
+    if (gps !== "success" || !verificationToken || !photo || saving) return;
+    setSaving(true);
+    setError("");
+    try {
+      const form = new FormData();
+      form.append("verificationToken", verificationToken);
+      form.append("photo", photo, photo.name);
+      // 서버가 multipart verificationToken/photo 필드를 지원하는지 확인 필요.
+      const result = unwrap(await (isIn ? clockIn(form) : clockOut(form)));
+      setReceipt(result ?? {});
+      releaseCamera();
+    } catch (e) {
+      setError(errorText(e));
+      // 인증 토큰 만료 가능성을 고려해 재인증을 요구
+      setVerificationToken("");
+      setGps("failed");
+    } finally {
+      setSaving(false);
+    }
+  }
 
-  // ========================================
-  // 화면
-  // ========================================
-  return (
-    <main
-      style={{
-        padding: 24,
-        maxWidth: 520,
-        margin: "0 auto",
-      }}
-    >
-      <h1>{title} 인증</h1>
+  if (!valid) return <main className="ef-page"><FeatureNotice tone="error">출퇴근 유형이 올바르지 않습니다.</FeatureNotice><Link to="/attendance">출퇴근 관리로 돌아가기</Link></main>;
 
-      <p>
-        현재 위치를 확인하고 근무 현장 사진을
-        촬영해 주세요.
-      </p>
+  if (receipt) return <main className="ef-page ef-complete">
+    <div className="ef-success-symbol"><FeatureIcon name="check" size={44}/></div>
+    <p className="ef-eyebrow">{title} 기록 완료</p>
+    <h1>{isIn ? "안전한 하루를 시작해요" : "오늘도 수고 많으셨어요"}</h1>
+    <p>사진과 GPS 인증 정보가 서버에 저장되었습니다.</p>
+    <section className="ef-card"><div className="ef-info-row"><span>기록 유형</span><b>{title}</b></div><div className="ef-info-row"><span>서버 기록 시각</span><b>{displayKst(receipt.clockInAt ?? receipt.clockOutAt ?? receipt.recordedAt ?? receipt.serverTimestamp)}</b></div><div className="ef-info-row"><span>GPS 인증</span><b>완료</b></div></section>
+    <FeatureButton onClick={() => navigate("/home", { replace: true })}>홈으로 돌아가기</FeatureButton>
+  </main>;
 
-      {/* 1. GPS 위치 확인 */}
-      <section style={{ marginBottom: 32 }}>
-        <h2>1. GPS 위치 확인</h2>
-
-        <button
-          type="button"
-          onClick={handleLocationCheck}
-          disabled={gpsLoading}
-        >
-          {gpsLoading
-            ? "위치 확인 중..."
-            : "현재 위치 확인"}
-        </button>
-
-        <button
-          type="button"
-          onClick={handleResetLocation}
-          disabled={gpsLoading}
-          style={{ marginLeft: 8 }}
-        >
-          위치 초기화
-        </button>
-
-        {gpsError && (
-          <p role="alert" style={{ color: "red" }}>
-            {gpsError}
-          </p>
-        )}
-
-        {location && (
-          <div style={{ marginTop: 16 }}>
-            <h3>GPS 좌표 획득 성공</h3>
-
-            <p>
-              <strong>위도:</strong>{" "}
-              {location.latitude}
-            </p>
-
-            <p>
-              <strong>경도:</strong>{" "}
-              {location.longitude}
-            </p>
-
-            <p>
-              <strong>정확도:</strong>{" "}
-              약 {Math.round(location.accuracy)}m
-            </p>
-
-            <p>
-              <strong>측정 시각:</strong>{" "}
-              {new Date(
-                location.timestamp
-              ).toLocaleString()}
-            </p>
-
-            <p>
-              아직 사업장 GPS 인증이 완료된 것은
-              아닙니다.
-            </p>
-          </div>
-        )}
-      </section>
-
-      {/* 2. 현장 사진 촬영 */}
-      <section style={{ marginBottom: 32 }}>
-        <h2>2. 근무 현장 사진 촬영</h2>
-
-        <p>
-          스마트폰에서는 카메라 촬영,
-          PC에서는 파일 선택이 가능합니다.
-        </p>
-
-        <label htmlFor="attendance-photo">
-          현장 사진 선택
-        </label>
-
-        <input
-          id="attendance-photo"
-          type="file"
-          accept="image/*"
-          capture="environment"
-          onChange={handlePhotoChange}
-        />
-
-        {photoError && (
-          <p role="alert" style={{ color: "red" }}>
-            {photoError}
-          </p>
-        )}
-
-        {photo && (
-          <div style={{ marginTop: 16 }}>
-            <p>
-              <strong>파일명:</strong>{" "}
-              {photo.name}
-            </p>
-
-            <p>
-              <strong>파일 크기:</strong>{" "}
-              {(photo.size / 1024 / 1024).toFixed(2)}
-              MB
-            </p>
-
-            {previewUrl && (
-              <img
-                src={previewUrl}
-                alt="근무 현장 사진 미리보기"
-                style={{
-                  display: "block",
-                  maxWidth: "100%",
-                  maxHeight: 320,
-                  objectFit: "contain",
-                }}
-              />
-            )}
-
-            <button
-              type="button"
-              onClick={handleRemovePhoto}
-              style={{ marginTop: 12 }}
-            >
-              사진 삭제 및 재촬영
-            </button>
-          </div>
-        )}
-      </section>
-
-      {/* 3. 출퇴근 기록 */}
-      <section style={{ marginBottom: 32 }}>
-        <h2>3. {title} 기록</h2>
-
-        <p>
-          GPS:{" "}
-          {location ? "좌표 확인 완료" : "미확인"}
-        </p>
-
-        <p>
-          사진:{" "}
-          {photo ? "선택 완료" : "미선택"}
-        </p>
-
-        <p>서버 GPS 인증: 미진행</p>
-
-        {readyForCapture && (
-          <p role="status">
-            GPS와 사진이 준비되었습니다.
-            서버 인증은 아직 연결되지 않았습니다.
-          </p>
-        )}
-
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={!readyForCapture}
-        >
-          {title} 기록 요청 확인
-        </button>
-
-        {serverMessage && (
-          <p role="status">
-            {serverMessage}
-          </p>
-        )}
-      </section>
-
-      <Link to="/attendance">
-        출퇴근 관리로 돌아가기
-      </Link>
-    </main>
-  );
+  return <main className="ef-camera-screen">
+    <header className="ef-camera-header"><Link to="/home" aria-label="뒤로 가기"><FeatureIcon name="arrow"/></Link><div><b>{title} 인증</b><span>{isIn ? "근무 시작 기록" : "근무 종료 기록"}</span></div><span/></header>
+    <div className="ef-camera-preview">
+      <video ref={videoRef} autoPlay muted playsInline className="ef-camera-video" />
+      {preview && <img className="ef-camera-video" src={preview} alt="촬영한 현장 사진" />}
+      <div className="ef-camera-guide"><i/><i/><i/><i/></div>
+      <div className="ef-camera-copy"><b>근무 장소가 보이도록 촬영해 주세요</b><span>GPS 인증 후 촬영 버튼이 활성화됩니다</span></div>
+      <div className={`ef-gps-panel ef-gps-${gps}`}>
+        <div className="ef-gps-icon">{gps === "success" ? <FeatureIcon name="check"/> : gps === "checking" ? <i className="ef-spinner"/> : <FeatureIcon name="alert"/>}</div>
+        <div><b>{gps === "success" ? "근무장소 인증 완료" : gps === "checking" ? "GPS 위치를 확인하고 있어요" : gps === "denied" ? "위치 권한이 거부되었어요" : "근무장소를 인증할 수 없어요"}</b><span>{gps === "success" ? `서버 인증 성공 · 정확도 약 ${Math.round(gpsAccuracy ?? 0)}m` : gps === "checking" ? "위치 권한 · 정확도 · 등록 장소 비교 중" : "위치 권한·GPS·등록된 근무장소를 확인해 주세요"}</span></div>
+      </div>
+    </div>
+    {error && <div className="ef-camera-error" role="alert"><FeatureIcon name="alert" size={17}/>{error}</div>}
+    {positionError && !error && <div className="ef-camera-error" role="alert">{positionError}</div>}
+    {cameraError && gps === "success" && !photo && <p className="ef-camera-hint">{cameraError}</p>}
+    <div className="ef-camera-controls">
+      {(gps === "failed" || gps === "denied") && <FeatureButton variant="secondary" disabled={locating} onClick={verifyGps}><FeatureIcon name="refresh"/> GPS 재인증</FeatureButton>}
+      <input ref={fileInputRef} className="ef-visually-hidden" type="file" accept="image/*" capture="environment" onChange={(e) => { usePhoto(e.target.files?.[0]); e.target.value = ""; }}/>
+      <button type="button" aria-label="사진 촬영" className={`ef-shutter ${gps === "success" ? "enabled" : ""}`} disabled={gps !== "success" || saving || Boolean(photo)} onClick={takePhoto}><span/></button>
+      <small>{gps === "success" ? `${title} 사진 촬영` : "GPS 인증 전에는 촬영할 수 없어요"}</small>
+    </div>
+    {photo && <div className="ef-capture-sheet"><img src={preview} alt="촬영 결과 미리보기"/><div><b>사진이 선명하게 촬영되었나요?</b><span>GPS 인증 정보와 함께 서버로 저장해요.</span></div><FeatureButton variant="secondary" disabled={saving} onClick={clearPhoto}>다시 촬영</FeatureButton><FeatureButton disabled={saving} onClick={save}>{saving ? "서버에 저장 중..." : "기록 저장"}</FeatureButton></div>}
+  </main>;
 }

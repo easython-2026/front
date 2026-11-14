@@ -1,133 +1,143 @@
 
-import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router";
-import { apiRequest } from "../../api/client";
-import { getNotificationPath } from "../../utils/notificationNavigation";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 
-const TYPE_LABELS = {
-  PAYDAY: "월급날",
-  MISSING_RECORD: "근무기록 누락",
-  MISMATCH: "임금 불일치",
-  CONSULTATION_UPDATE: "상담 진행",
-  INFO_REQUEST: "추가 자료 요청",
+import {
+  getNotifications,
+  markNotificationAsRead,
+} from "../../api/notification";
+
+import {
+  getNotificationPath,
+} from "../../utils/notificationNavigation";
+
+import {
+  SettingsBadge,
+  SettingsHeader,
+  SettingsIcon,
+  SettingsNotice,
+  formatKst,
+  settingsError,
+  unwrap,
+} from "../../components/SettingsPageUI";
+
+const types = {
+  PAYDAY: {
+    title: "월급날 안내",
+    icon: "wallet",
+  },
+  MISSING_RECORD: {
+    title: "근무기록 누락",
+    icon: "clock",
+  },
+  MISMATCH: {
+    title: "급여 비교",
+    icon: "alert",
+  },
+  CONSULTATION_UPDATE: {
+    title: "상담 진행",
+    icon: "message",
+  },
+  INFO_REQUEST: {
+    title: "추가 자료 요청",
+    icon: "file",
+  },
 };
 
-function unwrap(response) {
-  return response?.data ?? response;
-}
+function parseNotifications(response) {
+  const data = unwrap(response);
 
-function getErrorMessage(error) {
-  if (error?.status === 401) {
-    return "로그인이 필요합니다.";
+  if (!Array.isArray(data?.notifications)) {
+    throw new Error(
+      "알림 목록 응답 형식을 확인해 주세요."
+    );
   }
 
-  return error?.message ?? "알림을 불러오지 못했습니다.";
+  return data;
 }
 
 export default function Notifications() {
   const navigate = useNavigate();
 
-  const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(null);
-  const [pageInfo, setPageInfo] = useState(null);
+  const [items, setItems] = useState([]);
+  const [unreadCount, setUnreadCount] =
+    useState(null);
 
-  const [unreadOnly, setUnreadOnly] = useState(false);
+  const [pageInfo, setPageInfo] = useState(null);
   const [page, setPage] = useState(1);
-  const [reloadKey, setReloadKey] = useState(0);
+  const [unreadOnly, setUnreadOnly] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [readingId, setReadingId] = useState(null);
   const [error, setError] = useState("");
+  const [reload, setReload] = useState(0);
 
-  const loadNotifications = useCallback(
-    async (signal) => {
-      const response = await apiRequest(
-        "notification",
-        "getList",
-        {
-          query: {
-            unreadOnly,
-            page,
-            size: 20,
-          },
-          signal,
-        }
-      );
-
-      const data = unwrap(response);
-
-      if (!Array.isArray(data?.notifications)) {
-        throw new Error(
-          "알림 목록 응답 형식이 올바르지 않습니다."
-        );
-      }
-
-      return data;
-    },
-    [unreadOnly, page]
-  );
-
+  // 알림 목록 API
   useEffect(() => {
-    const controller = new AbortController();
     let active = true;
 
-    async function load() {
-      try {
-        const data = await loadNotifications(controller.signal);
+    setLoading(true);
+    setError("");
 
+    getNotifications({
+      unreadOnly,
+      page,
+      size: 20,
+    })
+      .then((response) => {
         if (!active) return;
 
-        setNotifications(data.notifications);
+        const data = parseNotifications(response);
+
+        setItems(data.notifications);
         setUnreadCount(data.unreadCount ?? null);
         setPageInfo(data.pageInfo ?? null);
-        setError("");
-      } catch (err) {
-        if (!active || err?.name === "AbortError") return;
-
-        setError(getErrorMessage(err));
-      } finally {
+      })
+      .catch((err) => {
+        if (active) {
+          setItems([]);
+          setError(settingsError(err));
+        }
+      })
+      .finally(() => {
         if (active) setLoading(false);
-      }
-    }
-
-    load();
+      });
 
     return () => {
       active = false;
-      controller.abort();
     };
-  }, [loadNotifications, reloadKey]);
+  }, [unreadOnly, page, reload]);
 
-  function refresh() {
-    setLoading(true);
-    setReloadKey((value) => value + 1);
-  }
-
-  function changeFilter(nextValue) {
-    setUnreadOnly(nextValue);
-    setPage(1);
-    setLoading(true);
-  }
-
-  function changePage(nextPage) {
-    setPage(nextPage);
-    setLoading(true);
-  }
-
-  async function openNotification(item) {
-    if (readingId) return;
+  // 알림 읽음 처리 및 이동
+  async function openItem(item) {
+    if (
+      readingId !== null ||
+      item.id == null
+    ) {
+      return;
+    }
 
     setReadingId(item.id);
     setError("");
 
     try {
       if (!item.read) {
-        await apiRequest(
-          "notification",
-          "markAsRead",
-          {
-            params: { notificationId: item.id },
-          }
+        await markNotificationAsRead(
+          item.id
+        );
+
+        setItems((prev) =>
+          prev.map((v) =>
+            v.id === item.id
+              ? { ...v, read: true }
+              : v
+          )
+        );
+
+        setUnreadCount((count) =>
+          typeof count === "number"
+            ? Math.max(0, count - 1)
+            : count
         );
       }
 
@@ -135,183 +145,234 @@ export default function Notifications() {
 
       if (path) {
         navigate(path);
-        return;
+      } else {
+        setReload((n) => n + 1);
       }
-
-      // 이동할 대상이 없는 경우에는
-      // 읽음 처리 후 목록을 갱신한다.
-      refresh();
     } catch (err) {
-      setError(getErrorMessage(err));
+      setError(settingsError(err));
     } finally {
       setReadingId(null);
     }
   }
 
+  const totalPages = Number(
+    pageInfo?.totalPages
+  );
+
+  const canNext =
+    Number.isInteger(totalPages)
+      ? page < totalPages
+      : pageInfo?.hasNext === true;
+
   return (
-    <main
-      style={{
-        maxWidth: 680,
-        padding: 24,
-        margin: "0 auto",
-      }}
-    >
-      <h1>알림</h1>
+    <div className="efx-screen">
+      <SettingsHeader
+        title="알림"
+        back="/home"
+        onRefresh={() =>
+          setReload((n) => n + 1)
+        }
+        disabled={loading || readingId !== null}
+      />
 
-      <p>
-        읽지 않은 알림:{" "}
-        {unreadCount == null
-          ? "조회 중"
-          : `${unreadCount}개`}
-      </p>
+      <main className="efx-content">
+        <div className="efx-heading">
+          <p className="efx-eyebrow">NOTIFICATIONS</p>
+          <h1>중요한 소식을 모아봤어요</h1>
 
-      <div style={{
-        display: "flex",
-        gap: 8,
-        marginBottom: 24,
-      }}>
-        <button
-          type="button"
-          disabled={loading}
-          onClick={() => changeFilter(false)}
-          aria-pressed={!unreadOnly}
-        >
-          전체
-        </button>
-
-        <button
-          type="button"
-          disabled={loading}
-          onClick={() => changeFilter(true)}
-          aria-pressed={unreadOnly}
-        >
-          읽지 않음
-        </button>
-
-        <button
-          type="button"
-          disabled={loading}
-          onClick={refresh}
-        >
-          새로고침
-        </button>
-      </div>
-
-      {loading && (
-        <p role="status">알림 조회 중...</p>
-      )}
-
-      {error && (
-        <p role="alert" style={{ color: "red" }}>
-          {error}
-        </p>
-      )}
-
-      {!loading &&
-        !error &&
-        notifications.length === 0 && (
           <p>
-            {unreadOnly
-              ? "읽지 않은 알림이 없습니다."
-              : "도착한 알림이 없습니다."}
+            월급날, 근무기록, 상담 진행 상황을
+            놓치지 않도록 확인해요.
           </p>
-        )}
+        </div>
 
-      {!loading && notifications.map((item) => {
-        const path = getNotificationPath(item);
+        {/* 읽지 않은 알림 요약 */}
+        <section className="efx-notification-count">
+          <div>
+            <span>읽지 않은 알림</span>
 
-        return (
-          <article
-            key={item.id}
-            style={{
-              padding: 16,
-              border: item.read
-                ? "1px solid #ddd"
-                : "2px solid #F56B4A",
-              borderRadius: 10,
-              marginBottom: 12,
-              background: item.read
-                ? "#fff"
-                : "#fff7f4",
+            <strong>
+              {unreadCount == null
+                ? "–"
+                : unreadCount}
+              <small>개</small>
+            </strong>
+          </div>
+
+          <span className="efx-big-icon">
+            <SettingsIcon name="bell" size={29}/>
+          </span>
+        </section>
+
+        {/* 알림 필터 */}
+        <div
+          className="efx-filter-row"
+          role="group"
+          aria-label="알림 보기"
+        >
+          <button
+            type="button"
+            className={!unreadOnly ? "active" : ""}
+            aria-pressed={!unreadOnly}
+            onClick={() => {
+              setUnreadOnly(false);
+              setPage(1);
             }}
           >
-            <p style={{
-              fontSize: 12,
-              color: "#666",
-            }}>
-              {TYPE_LABELS[item.type] ??
-                item.type ??
-                "알림"}
-            </p>
+            전체 알림
+          </button>
 
-            <h2 style={{ fontSize: 17 }}>
-              {item.title ?? "알림"}
-            </h2>
+          <button
+            type="button"
+            className={unreadOnly ? "active" : ""}
+            aria-pressed={unreadOnly}
+            onClick={() => {
+              setUnreadOnly(true);
+              setPage(1);
+            }}
+          >
+            읽지 않음
+          </button>
+        </div>
 
-            <p style={{ whiteSpace: "pre-wrap" }}>
-              {item.body ?? ""}
-            </p>
+        {loading && (
+          <SettingsNotice>
+            알림을 불러오는 중입니다.
+          </SettingsNotice>
+        )}
 
-            {item.createdAt && (
-              <p style={{ fontSize: 12 }}>
-                {item.createdAt}
+        {error && (
+          <SettingsNotice tone="error">
+            {error}
+          </SettingsNotice>
+        )}
+
+        {!loading &&
+          !error &&
+          items.length === 0 && (
+            <section className="efx-card efx-empty">
+              <SettingsIcon name="bell" size={30}/>
+
+              <b>
+                {unreadOnly
+                  ? "읽지 않은 알림이 없어요"
+                  : "아직 도착한 알림이 없어요"}
+              </b>
+
+              <p>
+                새 알림은 이곳에서 확인할 수 있습니다.
               </p>
-            )}
+            </section>
+          )}
 
-            <p>
-              {item.read ? "읽음" : "읽지 않음"}
-            </p>
+        {/* 실제 알림 목록 */}
+        {!loading && !error && items.map(
+          (item, index) => {
+            const info = types[item.type] ?? {
+              title: item.type ?? "안내",
+              icon: "bell",
+            };
 
-            <button
-              type="button"
-              disabled={readingId !== null}
-              onClick={() => openNotification(item)}
-            >
-              {readingId === item.id
-                ? "처리 중..."
-                : path
-                  ? "확인하고 이동"
-                  : "읽음 처리"}
-            </button>
-          </article>
-        );
-      })}
+            const path = getNotificationPath(item);
 
-      {pageInfo && (
-        <div style={{
-          display: "flex",
-          gap: 12,
-          alignItems: "center",
-          marginTop: 24,
-        }}>
+            return (
+              <article
+                className={`efx-card efx-alert-card ${
+                  item.read ? "" : "efx-unread"
+                }`}
+                key={item.id ?? index}
+              >
+                <span className="efx-small-icon">
+                  <SettingsIcon name={info.icon}/>
+                </span>
+
+                <div className="efx-alert-main">
+                  <div className="efx-section-head">
+                    <span className="efx-overline">
+                      {info.title}
+                    </span>
+
+                    {!item.read && (
+                      <SettingsBadge tone="warning">
+                        새 알림
+                      </SettingsBadge>
+                    )}
+                  </div>
+
+                  <h2>
+                    {item.title ?? "새로운 알림"}
+                  </h2>
+
+                  <p>{item.body ?? ""}</p>
+
+                  <small>
+                    {formatKst(item.createdAt)}
+                  </small>
+
+                  <button
+                    className="efx-alert-action"
+                    type="button"
+                    onClick={() => openItem(item)}
+                    disabled={
+                      readingId !== null ||
+                      item.id == null
+                    }
+                  >
+                    {readingId === item.id
+                      ? "처리 중..."
+                      : path
+                      ? "확인하고 이동"
+                      : item.read
+                      ? "확인"
+                      : "읽음 처리"}
+
+                    <SettingsIcon
+                      name="chevron"
+                      size={15}
+                    />
+                  </button>
+                </div>
+              </article>
+            );
+          }
+        )}
+
+        {/* 페이지 이동 */}
+        <div className="efx-pager">
           <button
             type="button"
             disabled={loading || page <= 1}
-            onClick={() => changePage(page - 1)}
+            onClick={() =>
+              setPage((n) => n - 1)
+            }
           >
             이전
           </button>
 
           <span>
-            {page} / {pageInfo.totalPages ?? page}
+            {page}
+            {Number.isInteger(totalPages) &&
+            totalPages > 0
+              ? ` / ${totalPages}`
+              : ""}
           </span>
 
           <button
             type="button"
-            disabled={
-              loading ||
-              page >= (pageInfo.totalPages ?? page)
+            disabled={loading || !canNext}
+            onClick={() =>
+              setPage((n) => n + 1)
             }
-            onClick={() => changePage(page + 1)}
           >
             다음
           </button>
         </div>
-      )}
 
-      <p style={{ marginTop: 28 }}>
-        <Link to="/home">홈으로 돌아가기</Link>
-      </p>
-    </main>
+        <p className="efx-muted efx-center">
+          알림을 열면 서버에 읽음 상태가 저장됩니다.
+          일괄 읽음 처리 기능은 현재 API에 없습니다.
+        </p>
+      </main>
+    </div>
   );
 }

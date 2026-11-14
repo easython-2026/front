@@ -1,42 +1,36 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { apiRequest } from "../api/client";
+import "../styles/figma-petition.css";
 
-const TYPE_LABELS = {
-  CONTRACT: "근로계약서",
-  ATTENDANCE_PHOTO: "출퇴근 사진",
+const unwrap = (res) => res?.data ?? res;
+
+const labels = {
+  CONTRACT: "근로계약서 원본",
+  ATTENDANCE_PHOTO: "출퇴근 인증 사진",
   GPS_LOG: "GPS 위치 기록",
-  TIMESTAMP: "시간 기록",
+  TIMESTAMP: "서버 타임스탬프",
   PAYSLIP: "급여명세서",
-  MANUAL_RECORD: "수동 입력 기록",
+  MANUAL_RECORD: "수동 입력 근무기록",
 };
 
-function unwrap(response) {
-  return response?.data ?? response;
-}
+const ids = (list) => [
+  ...new Set(
+    (Array.isArray(list) ? list : [])
+      .map((e) => e?.id)
+      .filter((x) => x != null)
+      .map(String)
+  ),
+];
 
-function errorMessage(error) {
-  if (error?.status === 401) {
+function message(err) {
+  if (err?.status === 401)
     return "로그인이 필요합니다.";
-  }
 
-  if (error?.status === 400) {
-    return "증거 선택 내용을 확인해 주세요.";
-  }
-
-  if (error?.status === 409) {
+  if (err?.status === 409)
     return "현재 진정서 상태에서는 증거를 변경할 수 없습니다.";
-  }
 
-  return error?.message ?? "증거 처리에 실패했습니다.";
-}
-
-function getAttachedIds(attached) {
-  return [...new Set(
-    (Array.isArray(attached) ? attached : [])
-      .map((item) => item?.id)
-      .filter(Boolean)
-  )];
+  return err?.message ?? "증거를 불러오지 못했습니다.";
 }
 
 export default function ComplaintEvidenceSelector({
@@ -44,141 +38,147 @@ export default function ComplaintEvidenceSelector({
   attachedEvidences = [],
   disabled = false,
   onSaved,
+  onUnsavedChange,
 }) {
   const [available, setAvailable] = useState([]);
   const [selectedIds, setSelectedIds] = useState(
-    () => getAttachedIds(attachedEvidences)
+    () => ids(attachedEvidences)
   );
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
+  const [notice, setNotice] = useState("");
 
-  // 전체 증거 목록 불러오기
+  const originalIds = useMemo(
+    () => ids(attachedEvidences),
+    [attachedEvidences]
+  );
+
+  useEffect(() => {
+    setSelectedIds(originalIds);
+  }, [originalIds.join("|")]);
+
+  // 증거 전체 목록 불러오기
   useEffect(() => {
     let active = true;
 
-    async function loadEvidences() {
+    setLoading(true);
+    setError("");
+
+    async function run() {
       try {
-        const all = [];
         let page = 1;
         let totalPages = 1;
+        const found = [];
 
         do {
-          const response = await apiRequest(
-            "report",
-            "getEvidences",
-            {
-              query: { page, size: 100 },
-            }
+          const response = unwrap(
+            await apiRequest(
+              "report",
+              "getEvidences",
+              {
+                query: { page, size: 100 },
+              }
+            )
           );
 
           if (!active) return;
 
-          const data = unwrap(response);
-
-          if (!Array.isArray(data?.evidences)) {
+          if (!Array.isArray(response?.evidences)) {
             throw new Error(
               "증거 목록 응답 형식이 올바르지 않습니다."
             );
           }
 
-          all.push(...data.evidences);
+          found.push(...response.evidences);
 
-          const pages = Number(
-            data.pageInfo?.totalPages ?? 1
+          const count = Number(
+            response.pageInfo?.totalPages ?? 1
           );
 
           if (
-            !Number.isSafeInteger(pages) ||
-            pages < 1
+            !Number.isSafeInteger(count) ||
+            count < 1
           ) {
             throw new Error(
-              "증거 목록의 페이지 정보를 확인할 수 없습니다."
+              "증거 목록 페이지 정보가 올바르지 않습니다."
             );
           }
 
-          totalPages = pages;
+          totalPages = Math.min(count, 100);
           page += 1;
         } while (page <= totalPages);
 
-        if (!active) return;
-
-        // ID 기준 중복 제거
-        const unique = [
-          ...new Map(
-            all.filter((item) => item?.id)
-              .map((item) => [item.id, item])
-          ).values(),
-        ];
-
-        setAvailable(unique);
-        setError("");
-      } catch (err) {
         if (active) {
-          setError(errorMessage(err));
+          const unique = [
+            ...new Map(
+              found
+                .filter((e) => e?.id != null)
+                .map((e) => [String(e.id), e])
+            ).values(),
+          ];
+
+          setAvailable(unique);
         }
+      } catch (err) {
+        if (active) setError(message(err));
       } finally {
         if (active) setLoading(false);
       }
     }
 
-    loadEvidences();
+    run();
 
     return () => {
       active = false;
     };
   }, []);
 
-  const originalIds = useMemo(
-    () => getAttachedIds(attachedEvidences),
-    [attachedEvidences]
+  const dirty =
+    JSON.stringify([...selectedIds].sort()) !==
+    JSON.stringify([...originalIds].sort());
+
+  const currentIds = new Set(
+    available.map((item) => String(item.id))
   );
 
-  const availableIds = useMemo(
-    () => new Set(available.map((item) => item.id)),
-    [available]
+  const missing = originalIds.filter(
+    (id) => !currentIds.has(id)
   );
 
-  // 조회 목록에 없는 기존 첨부 증거는
-  // 저장 시 누락시키지 않는다.
-  const missingOriginalIds = originalIds.filter(
-    (id) => !availableIds.has(id)
-  );
+  // 미저장 변경사항을 부모에 전달하여
+  // PDF 다운로드 전 저장하도록 한다.
+  useEffect(() => {
+    onUnsavedChange?.(dirty);
+  }, [dirty, onUnsavedChange]);
 
-  const normalizedSelected = [...selectedIds].sort();
-  const normalizedOriginal = [...originalIds].sort();
-
-  const changed =
-    JSON.stringify(normalizedSelected) !==
-    JSON.stringify(normalizedOriginal);
-
-  const canSave =
-    !disabled &&
-    !loading &&
-    !saving &&
-    !error &&
-    changed &&
-    selectedIds.length > 0 &&
-    missingOriginalIds.length === 0;
-
-  function toggleEvidence(id, checked) {
-    setSelectedIds((previous) =>
-      checked
-        ? [...new Set([...previous, id])]
-        : previous.filter((item) => item !== id)
+  function toggle(id) {
+    setSelectedIds((prev) =>
+      prev.includes(id)
+        ? prev.filter((x) => x !== id)
+        : [...prev, id]
     );
 
-    setMessage("");
+    setNotice("");
   }
 
-  async function saveEvidences() {
-    if (!canSave) return;
+  async function save() {
+    if (
+      disabled ||
+      saving ||
+      loading ||
+      error ||
+      !dirty ||
+      !selectedIds.length ||
+      missing.length
+    ) {
+      return;
+    }
 
     setSaving(true);
     setError("");
-    setMessage("");
+    setNotice("");
 
     try {
       await apiRequest(
@@ -192,142 +192,147 @@ export default function ComplaintEvidenceSelector({
         }
       );
 
-      setMessage("진정서 첨부 증거가 저장되었습니다.");
+      setNotice("선택한 증거가 서버에 저장되었습니다.");
 
-      // 부모 컴포넌트의 상세 GET 재조회
       onSaved?.();
     } catch (err) {
-      setError(errorMessage(err));
+      setError(message(err));
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <section>
-      <h2>진정서 첨부 증거 관리</h2>
+    <section className="pf-card pf-attachments">
+      <div className="pf-attach-header">
+        <h2>관련 증거</h2>
+        <span>{selectedIds.length}개 선택</span>
+      </div>
 
-      <p>
-        진정서에 포함할 증거를 선택하세요.
-        저장하면 선택한 증거 전체가 적용됩니다.
+      <p className="pf-muted">
+        진정서에 연결할 실제 증거를 선택하고 저장해 주세요.
       </p>
 
       {loading && (
-        <p role="status">증거 목록을 불러오는 중...</p>
+        <p className="pf-muted" role="status">
+          증거 목록을 불러오는 중...
+        </p>
       )}
 
       {error && (
-        <p role="alert" style={{ color: "red" }}>
+        <div role="alert" className="pf-notice pf-error">
           {error}
-        </p>
+        </div>
       )}
 
-      {message && <p role="status">{message}</p>}
-
-      {!loading && available.length === 0 && !error && (
-        <p>등록된 증거가 없습니다.</p>
+      {notice && (
+        <div role="status" className="pf-notice pf-success">
+          {notice}
+        </div>
       )}
 
-      {missingOriginalIds.length > 0 && (
-        <p role="alert">
-          기존 첨부 증거 중 현재 증거 목록에서
-          조회되지 않는 항목이 있습니다.
-          누락된 항목이 임의로 삭제되지 않도록
-          저장을 차단했습니다.
-        </p>
-      )}
-
-      {!loading && available.map((evidence) => (
-        <label
-          key={evidence.id}
-          style={{
-            display: "block",
-            padding: 12,
-            border: "1px solid #ddd",
-            borderRadius: 8,
-            marginBottom: 10,
-          }}
+      {missing.length > 0 && (
+        <div
+          className="pf-notice pf-warn-box"
+          role="alert"
         >
-          <input
-            type="checkbox"
-            checked={selectedIds.includes(evidence.id)}
-            disabled={disabled || saving}
-            onChange={(event) =>
-              toggleEvidence(
-                evidence.id,
-                event.target.checked
-              )
-            }
-            style={{ marginRight: 8 }}
-          />
+          기존에 첨부된 증거 {missing.length}개를 목록에서
+          확인할 수 없습니다. 누락 방지를 위해 저장을
+          제한했어요.
+        </div>
+      )}
 
-          <strong>
-            {evidence.title ??
-              TYPE_LABELS[evidence.type] ??
-              "증거"}
-          </strong>
-
-          <p>
-            유형:{" "}
-            {TYPE_LABELS[evidence.type] ??
-              evidence.type ??
-              "미확인"}
-          </p>
-
-          {evidence.occurredAt && (
-            <p>발생 시각: {evidence.occurredAt}</p>
-          )}
-
-          {evidence.type === "MANUAL_RECORD" && (
-            <p>
-              수동 입력 기록 — GPS·사진 인증 원본과
-              구분되는 자료입니다.
-            </p>
-          )}
-
-          {evidence.hash && (
-            <details>
-              <summary>원본 해시 확인</summary>
-              <code style={{
-                overflowWrap: "anywhere",
-              }}>
-                {evidence.hash}
-              </code>
-            </details>
-          )}
-        </label>
-      ))}
-
-      <p>선택한 증거: {selectedIds.length}개</p>
-
-      {selectedIds.length === 0 && (
-        <p>
-          최소 1개 이상의 증거를 선택해야
-          저장할 수 있습니다.
+      {!loading && !available.length && !error && (
+        <p className="pf-muted">
+          저장된 증거가 없습니다. 계약서·출퇴근·급여 기록을
+          먼저 등록해 주세요.
         </p>
       )}
+
+      {available.map((item) => {
+        const id = String(item.id);
+        const checked = selectedIds.includes(id);
+
+        return (
+          <label key={id} className="pf-attach-row">
+            <input
+              type="checkbox"
+              checked={checked}
+              disabled={disabled || saving}
+              onChange={() => toggle(id)}
+            />
+
+            <span>
+              <b>
+                {item.title ||
+                  labels[item.type] ||
+                  "증거"}
+              </b>
+
+              <small>
+                {labels[item.type] ||
+                  item.type ||
+                  "유형 미확인"}
+
+                {item.occurredAt
+                  ? ` · ${item.occurredAt}`
+                  : ""}
+              </small>
+
+              {item.type === "MANUAL_RECORD" && (
+                <small>
+                  수동 기록 · GPS·사진 원본 아님
+                </small>
+              )}
+
+              {item.hash && (
+                <details>
+                  <summary>증거 해시 확인</summary>
+                  <code>{item.hash}</code>
+                </details>
+              )}
+            </span>
+
+            <em
+              className={`pf-pill ${
+                checked ? "pf-good" : ""
+              }`}
+            >
+              {checked ? "첨부 선택" : "미선택"}
+            </em>
+          </label>
+        );
+      })}
 
       <button
         type="button"
-        disabled={!canSave}
-        onClick={saveEvidences}
+        className="pf-primary"
+        disabled={
+          disabled ||
+          saving ||
+          loading ||
+          Boolean(error) ||
+          !dirty ||
+          !selectedIds.length ||
+          Boolean(missing.length)
+        }
+        onClick={save}
       >
         {saving
           ? "증거 저장 중..."
           : "선택한 증거 저장"}
       </button>
 
-      <button
-        type="button"
-        disabled={disabled || saving || !changed}
-        style={{ marginLeft: 8 }}
-        onClick={() => {
-          setSelectedIds(originalIds);
-          setMessage("선택을 취소했습니다.");
-        }}
-      >
-        선택 취소
-      </button>
+      {dirty && (
+        <button
+          type="button"
+          className="pf-secondary"
+          disabled={saving}
+          onClick={() => setSelectedIds(originalIds)}
+        >
+          선택 취소
+        </button>
+      )}
     </section>
   );
 }

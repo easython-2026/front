@@ -1,574 +1,518 @@
 
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
+
 import { Link } from "react-router";
-import { apiRequest } from "../../api/client";
 
-const EMPTY_WORKPLACE = {
-  name: "",
-  address: "",
-  latitude: "",
-  longitude: "",
-  radiusMeters: "",
-};
+import useGeolocation from "../../hooks/useGeolocation";
 
-const EMPTY_BUSINESS = {
-  name: "",
-  address: "",
-  ownerName: "",
-};
+import {
+  getWorkplace,
+} from "../../api/user";
 
-function unwrap(response) {
-  return response?.data ?? response;
-}
+import {
+  errorMessage,
+  readSettings,
+  saveSettingsSection,
+  workplaceForm,
+} from "../../utils/workplaceSettings";
 
-function getErrorMessage(error) {
-  if (error?.status === 401) {
-    return "로그인이 필요합니다.";
-  }
+import "../../styles/figma-settings.css";
+import "../../styles/figma-workplace-split.css";
 
-  if (error?.status === 400) {
-    return "입력한 주소, 좌표 또는 필수 항목을 확인해 주세요.";
-  }
+const EMPTY = workplaceForm(null);
 
-  return error?.message ?? "저장에 실패했습니다.";
-}
-
-function toWorkplaceForm(value) {
-  return {
-    name: value?.name ?? "",
-    address: value?.address ?? "",
-    latitude: value?.latitude == null
-      ? ""
-      : String(value.latitude),
-    longitude: value?.longitude == null
-      ? ""
-      : String(value.longitude),
-    radiusMeters: value?.radiusMeters == null
-      ? ""
-      : String(value.radiusMeters),
-  };
-}
-
-function toBusinessForm(value) {
-  return {
-    name: value?.name ?? "",
-    address: value?.address ?? "",
-    ownerName: value?.ownerName ?? "",
-  };
-}
-
-function validateWorkplace(form) {
-  const name = form.name.trim();
-  const address = form.address.trim();
-
-  if (!name || !address) {
-    throw new Error("근무장소명과 주소를 입력해 주세요.");
-  }
-
-  if (
-    form.latitude.trim() === "" ||
-    form.longitude.trim() === ""
-  ) {
-    throw new Error("위도와 경도를 모두 입력해 주세요.");
-  }
-
-  const latitude = Number(form.latitude);
-  const longitude = Number(form.longitude);
-
-  if (
-    !Number.isFinite(latitude) ||
-    latitude < -90 ||
-    latitude > 90
-  ) {
-    throw new Error("위도는 -90에서 90 사이여야 합니다.");
-  }
-
-  if (
-    !Number.isFinite(longitude) ||
-    longitude < -180 ||
-    longitude > 180
-  ) {
-    throw new Error("경도는 -180에서 180 사이여야 합니다.");
-  }
-
-  const result = {
-    name,
-    address,
-    latitude,
-    longitude,
-  };
-
-  if (form.radiusMeters.trim() !== "") {
-    const radius = Number(form.radiusMeters);
-
-    if (
-      !Number.isSafeInteger(radius) ||
-      radius <= 0
-    ) {
-      throw new Error("허용 반경은 1 이상의 정수여야 합니다.");
-    }
-
-    result.radiusMeters = radius;
-  }
-
-  return result;
-}
-
-function validateBusiness(form) {
-  const name = form.name.trim();
-  const address = form.address.trim();
-  const ownerName = form.ownerName.trim();
-
-  if (!name || !address || !ownerName) {
-    throw new Error(
-      "사업장명, 사업장 주소, 대표자명을 모두 입력해 주세요."
-    );
-  }
-
-  return { name, address, ownerName };
+function Icon({ name, size = 20 }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {name === "back" ? (
+        <path d="M19 12H5m6-6-6 6 6 6" />
+      ) : name === "pin" ? (
+        <>
+          <path d="M12 22s7-6.2 7-13a7 7 0 1 0-14 0c0 6.8 7 13 7 13 7 13Z" />
+          <circle cx="12" cy="9" r="2.5" />
+        </>
+      ) : name === "refresh" ? (
+        <>
+          <path d="M20 7v5h-5M4 17v-5h5" />
+          <path d="M18.4 9A7 7 0 0 0 6.5 6.5L4 9m1.6 6a7 7 0 0 0 11.9 2.5L20 15" />
+        </>
+      ) : (
+        <path d="m5 12 4 4L19 6" />
+      )}
+    </svg>
+  );
 }
 
 export default function Workplace() {
-  const [serverData, setServerData] = useState(null);
+  const [form, setForm] =
+    useState(EMPTY);
 
-  const [workplace, setWorkplace] =
-    useState(EMPTY_WORKPLACE);
+  const [original, setOriginal] =
+    useState(null);
 
-  const [business, setBusiness] =
-    useState(EMPTY_BUSINESS);
+  const [loading, setLoading] =
+    useState(true);
 
-  const [loading, setLoading] = useState(true);
-  const [savingWorkplace, setSavingWorkplace] = useState(false);
-  const [savingBusiness, setSavingBusiness] = useState(false);
+  const [saving, setSaving] =
+    useState(false);
 
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
-  const [reloadKey, setReloadKey] = useState(0);
+  const [error, setError] =
+    useState("");
 
+  const [message, setMessage] =
+    useState("");
+
+  const [refreshKey, setRefreshKey] =
+    useState(0);
+
+  const [accuracy, setAccuracy] =
+    useState(null);
+
+  const {
+    getCurrentLocation,
+    loading: locating,
+    error: geoError,
+  } = useGeolocation();
+
+  // 서버 근무장소 정보 조회
   useEffect(() => {
-    const controller = new AbortController();
     let active = true;
 
-    async function load() {
-      try {
-        const response = await apiRequest(
-          "accountSettings",
-          "getWorkplace",
-          { signal: controller.signal }
-        );
+    setLoading(true);
+    setOriginal(null);
+    setError("");
 
+    getWorkplace()
+      .then((response) => {
         if (!active) return;
 
-        const data = unwrap(response);
+        const value = workplaceForm(
+          readSettings(response).workplace
+        );
 
-        if (!data || typeof data !== "object") {
-          throw new Error(
-            "근무장소 조회 응답 형식이 올바르지 않습니다."
-          );
+        setForm(value);
+        setOriginal(value);
+      })
+      .catch((err) => {
+        if (active) {
+          setError(errorMessage(err));
         }
-
-        setServerData(data);
-        setWorkplace(toWorkplaceForm(data.workplace));
-        setBusiness(toBusinessForm(data.business));
-
-        setError("");
-      } catch (err) {
-        if (!active || err?.name === "AbortError") return;
-        setError(getErrorMessage(err));
-      } finally {
-        if (active) setLoading(false);
-      }
-    }
-
-    load();
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
 
     return () => {
       active = false;
-      controller.abort();
     };
-  }, [reloadKey]);
+  }, [refreshKey]);
 
-  function refresh() {
-    setLoading(true);
-    setMessage("");
-    setReloadKey((previous) => previous + 1);
-  }
+  const dirty =
+    original !== null &&
+    JSON.stringify(form) !==
+      JSON.stringify(original);
 
-  function changeWorkplace(key, value) {
-    setWorkplace((previous) => ({
-      ...previous,
+  const busy =
+    loading || saving || locating;
+
+  function change(key, value) {
+    setForm((prev) => ({
+      ...prev,
       [key]: value,
     }));
+
+    setError("");
     setMessage("");
   }
 
-  function changeBusiness(key, value) {
-    setBusiness((previous) => ({
-      ...previous,
-      [key]: value,
-    }));
-    setMessage("");
-  }
+  // 현재 GPS 위치 획득
+  async function useCurrentPosition() {
+    if (busy) return;
 
-  async function saveData(body, successMessage) {
-    const response = await apiRequest(
-      "accountSettings",
-      "saveWorkplace",
-      { body }
-    );
-
-    const data = unwrap(response);
-
-    // 서버 응답으로 화면 동기화
-    if (!data || typeof data !== "object") {
-      throw new Error("저장 응답을 확인할 수 없습니다.");
-    }
-
-    setServerData(data);
-    setWorkplace(toWorkplaceForm(data.workplace));
-    setBusiness(toBusinessForm(data.business));
-    setMessage(successMessage);
-  }
-
-  async function handleSaveWorkplace(event) {
-    event.preventDefault();
-
-    if (loading || savingWorkplace || savingBusiness) return;
-
-    let payload;
-
-    try {
-      payload = validateWorkplace(workplace);
-    } catch (err) {
-      setError(getErrorMessage(err));
-      return;
-    }
-
-    setSavingWorkplace(true);
     setError("");
     setMessage("");
 
     try {
-      // 전체 교체 대상 workplace의 필수 필드를 모두 전송
-      await saveData(
-        { workplace: payload },
-        "근무장소 정보가 저장되었습니다."
+      const coords =
+        await getCurrentLocation();
+
+      if (
+        !Number.isFinite(coords.latitude) ||
+        !Number.isFinite(coords.longitude)
+      ) {
+        throw new Error(
+          "현재 위치 좌표가 올바르지 않습니다."
+        );
+      }
+
+      setForm((prev) => ({
+        ...prev,
+        latitude: String(coords.latitude),
+        longitude: String(coords.longitude),
+      }));
+
+      setAccuracy(coords.accuracy);
+
+      setMessage(
+        "현재 위치를 입력했습니다. 실제 근무장소인지 확인하고 저장해 주세요."
       );
     } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setSavingWorkplace(false);
+      setError(errorMessage(err));
     }
   }
 
-  async function handleSaveBusiness(event) {
+  // 근무장소만 수정
+  async function handleSave(event) {
     event.preventDefault();
 
-    if (loading || savingWorkplace || savingBusiness) return;
+    if (busy || !dirty) return;
 
-    let payload;
-
-    try {
-      payload = validateBusiness(business);
-    } catch (err) {
-      setError(getErrorMessage(err));
-      return;
-    }
-
-    setSavingBusiness(true);
+    setSaving(true);
     setError("");
     setMessage("");
 
     try {
-      // business만 변경할 때 workplace는 전송하지 않는다.
-      await saveData(
-        { business: payload },
-        "사업장 정보가 저장되었습니다."
+      const updated =
+        await saveSettingsSection(
+          "workplace",
+          form
+        );
+
+      const current = workplaceForm(
+        updated.workplace
+      );
+
+      setForm(current);
+      setOriginal(current);
+
+      setMessage(
+        "근무장소가 서버에 저장된 것을 확인했습니다."
       );
     } catch (err) {
-      setError(getErrorMessage(err));
+      setError(errorMessage(err));
     } finally {
-      setSavingBusiness(false);
+      setSaving(false);
     }
   }
-
-  const busy = loading || savingWorkplace || savingBusiness;
-
-  const savedWorkplace = serverData?.workplace;
-  const savedBusiness = serverData?.business;
 
   return (
-    <main style={{
-      maxWidth: 720,
-      margin: "0 auto",
-      padding: 24,
-    }}>
-      <h1>근무장소 및 사업장 관리</h1>
+    <div className="pfs-screen pfs-workplace-page pfs-split-page">
 
-      <p>
-        근무장소는 GPS 출퇴근 인증에 사용되고,
-        사업장 정보는 진정서 작성에 사용됩니다.
-      </p>
+      {/* 상단바 */}
+      <header className="pfs-header pfs-back-header">
+        <Link
+          to="/profile"
+          aria-label="내 정보로 돌아가기"
+        >
+          <Icon name="back" />
+        </Link>
 
-      {loading && (
-        <p role="status">
-          근무장소 정보를 불러오는 중...
-        </p>
-      )}
+        <strong>근무장소 관리</strong>
 
-      {error && (
-        <p role="alert" style={{ color: "red" }}>
-          {error}
-        </p>
-      )}
+        <button
+          type="button"
+          aria-label="근무장소 새로고침"
+          disabled={busy}
+          onClick={() => {
+            setMessage("");
+            setRefreshKey((n) => n + 1);
+          }}
+        >
+          <Icon name="refresh" size={18} />
+        </button>
+      </header>
 
-      {message && <p role="status">{message}</p>}
+      <main className="pfs-content pfs-workplace-content">
 
-      {!loading && serverData && (
-        <>
-          <section style={{ marginTop: 28 }}>
-            <h2>1. 근무장소 정보</h2>
+        {/* 제목 */}
+        <div className="pfs-heading">
+          <p className="pfs-eyebrow">
+            WORKPLACE LOCATION
+          </p>
 
-            <p>
-              등록 상태:{" "}
-              {savedWorkplace
-                ? "등록됨"
-                : "미등록"}
-            </p>
+          <h1>
+            출퇴근할 장소를
+            <br />
+            등록해 주세요
+          </h1>
 
-            <p>
-              출퇴근 GPS 인증 기준이 되는 실제 장소를
-              입력해 주세요.
-            </p>
+          <p>
+            GPS 인증에 사용하는 실제 근무장소를
+            설정합니다. 사업장 주소와 다를 수 있어요.
+          </p>
+        </div>
 
-            <form onSubmit={handleSaveWorkplace}>
-              <div style={{ marginBottom: 12 }}>
-                <label htmlFor="workplace-name">
-                  근무장소명
-                </label>
-                <input
-                  id="workplace-name"
-                  value={workplace.name}
-                  onChange={(event) =>
-                    changeWorkplace("name", event.target.value)
-                  }
-                  disabled={busy}
-                  required
-                  style={{ display: "block", width: "100%" }}
-                />
+        {loading && (
+          <p
+            className="pfs-notice"
+            role="status"
+          >
+            근무장소 정보를 불러오는 중...
+          </p>
+        )}
+
+        {error && (
+          <p
+            className="pfs-notice pfs-error"
+            role="alert"
+          >
+            {error}
+          </p>
+        )}
+
+        {geoError && !error && (
+          <p
+            className="pfs-notice pfs-error"
+            role="alert"
+          >
+            {geoError}
+          </p>
+        )}
+
+        {message && (
+          <p
+            className="pfs-notice pfs-success"
+            role="status"
+          >
+            {message}
+          </p>
+        )}
+
+        {!loading && original && (
+          <form
+            className="pfs-workplace-form"
+            onSubmit={handleSave}
+          >
+            {/* GPS 인증 기준 장소 */}
+            <section className="pfs-card pfs-workplace-card">
+
+              <div className="pfs-split-card-heading">
+                <span className="pfs-split-icon">
+                  <Icon name="pin" />
+                </span>
+
+                <div>
+                  <h2>GPS 인증 기준 장소</h2>
+
+                  <p>
+                    출퇴근할 때 비교하는 기준 위치입니다.
+                  </p>
+                </div>
               </div>
 
-              <div style={{ marginBottom: 12 }}>
-                <label htmlFor="workplace-address">
-                  근무장소 주소
-                </label>
-                <input
-                  id="workplace-address"
-                  value={workplace.address}
-                  onChange={(event) =>
-                    changeWorkplace("address", event.target.value)
-                  }
-                  disabled={busy}
-                  required
-                  style={{ display: "block", width: "100%" }}
-                />
+              {/* Figma 위치 카드 */}
+              <div className="pfs-map-placeholder">
+                <Icon name="pin" size={38} />
+
+                <b>
+                  {form.name || "근무장소 미등록"}
+                </b>
+
+                <span>
+                  {form.latitude !== "" &&
+                  form.longitude !== ""
+                    ? `${form.latitude}, ${form.longitude}`
+                    : "위도·경도 정보 없음"}
+                </span>
+
+                <small>
+                  위치 안내 영역 · 실제 지도는 아닙니다
+                </small>
               </div>
 
-              <div style={{ marginBottom: 12 }}>
-                <label htmlFor="workplace-latitude">
-                  위도 (latitude)
-                </label>
+              {/* 근무장소명 */}
+              <label className="pfs-field">
+                근무장소명
+
                 <input
-                  id="workplace-latitude"
-                  type="number"
-                  step="any"
-                  min="-90"
-                  max="90"
-                  value={workplace.latitude}
-                  onChange={(event) =>
-                    changeWorkplace("latitude", event.target.value)
-                  }
+                  value={form.name}
                   disabled={busy}
                   required
-                />
-              </div>
-
-              <div style={{ marginBottom: 12 }}>
-                <label htmlFor="workplace-longitude">
-                  경도 (longitude)
-                </label>
-                <input
-                  id="workplace-longitude"
-                  type="number"
-                  step="any"
-                  min="-180"
-                  max="180"
-                  value={workplace.longitude}
+                  placeholder="예: 제1공장"
                   onChange={(event) =>
-                    changeWorkplace("longitude", event.target.value)
+                    change(
+                      "name",
+                      event.target.value
+                    )
                   }
+                />
+              </label>
+
+              {/* 근무장소 주소 */}
+              <label className="pfs-field">
+                실제 근무장소 주소
+
+                <input
+                  value={form.address}
                   disabled={busy}
                   required
+                  placeholder="실제 출퇴근하는 주소"
+                  onChange={(event) =>
+                    change(
+                      "address",
+                      event.target.value
+                    )
+                  }
                 />
+              </label>
+
+              {/* 위도·경도 */}
+              <div className="pfs-coordinate-row">
+                <label className="pfs-field">
+                  위도
+
+                  <input
+                    type="number"
+                    min="-90"
+                    max="90"
+                    step="any"
+                    required
+                    value={form.latitude}
+                    disabled={busy}
+                    onChange={(event) =>
+                      change(
+                        "latitude",
+                        event.target.value
+                      )
+                    }
+                  />
+                </label>
+
+                <label className="pfs-field">
+                  경도
+
+                  <input
+                    type="number"
+                    min="-180"
+                    max="180"
+                    step="any"
+                    required
+                    value={form.longitude}
+                    disabled={busy}
+                    onChange={(event) =>
+                      change(
+                        "longitude",
+                        event.target.value
+                      )
+                    }
+                  />
+                </label>
               </div>
 
-              <div style={{ marginBottom: 12 }}>
-                <label htmlFor="workplace-radius">
-                  허용 반경 (미터, 선택)
-                </label>
+              {/* GPS 허용 반경 */}
+              <label className="pfs-field">
+                GPS 허용 반경 (m · 선택)
+
                 <input
-                  id="workplace-radius"
                   type="number"
                   min="1"
                   step="1"
-                  value={workplace.radiusMeters}
+                  value={form.radiusMeters}
+                  disabled={busy}
+                  placeholder="미입력 시 기존 값 또는 서버 기본값 유지"
                   onChange={(event) =>
-                    changeWorkplace(
+                    change(
                       "radiusMeters",
                       event.target.value
                     )
                   }
-                  disabled={busy}
                 />
-                <p>
-                  비워두면 서버 기본값을 사용합니다.
-                  기존 허용 반경을 변경하려면 새 값을 입력하세요.
-                </p>
-              </div>
+              </label>
 
-              <p>
-                주소를 입력했다고 위도와 경도가 자동
-                확인되는 것은 아닙니다. 실제 근무장소의
-                좌표를 확인하고 등록해야 합니다.
+              {/* 위치 불러오기 */}
+              <button
+                type="button"
+                className="pfs-secondary"
+                onClick={useCurrentPosition}
+                disabled={busy}
+              >
+                <Icon name="pin" size={18} />
+
+                {locating
+                  ? "현재 위치 확인 중..."
+                  : "현재 위치로 변경"}
+              </button>
+
+              <p className="pfs-muted">
+                실제 근무장소에서 버튼을 누르세요.
+                주소가 자동 변환되지는 않습니다.
+
+                {accuracy != null
+                  ? ` 최근 GPS 정확도 약 ${Math.round(
+                      accuracy
+                    )}m`
+                  : ""}
               </p>
+            </section>
 
-              <button
-                type="submit"
-                disabled={busy}
-              >
-                {savingWorkplace
-                  ? "근무장소 저장 중..."
-                  : "근무장소 저장"}
-              </button>
-            </form>
-          </section>
+            {/* 저장 */}
+            <button
+              className="pfs-primary"
+              type="submit"
+              disabled={busy || !dirty}
+            >
+              {saving
+                ? "저장 및 확인 중..."
+                : "근무장소 저장"}
+            </button>
 
-          <hr style={{ margin: "32px 0" }} />
+            <button
+              className="pfs-reset"
+              type="button"
+              disabled={busy || !dirty}
+              onClick={() => {
+                setForm({ ...original });
+                setError("");
+                setMessage("");
+              }}
+            >
+              변경 취소
+            </button>
+          </form>
+        )}
 
-          <section>
-            <h2>2. 사업장 정보</h2>
+        {/* 사업장 정보 페이지로 이동 */}
+        <Link
+          className="pfs-split-next"
+          to="/workplace/business"
+        >
+          <span className="pfs-split-icon pfs-split-building">
+            ▤
+          </span>
 
-            <p>
-              등록 상태:{" "}
-              {savedBusiness
-                ? "등록됨"
-                : "미등록"}
-            </p>
+          <span>
+            <b>사업장 정보 관리</b>
 
-            <p>
-              진정서 작성에 필요한 사업장 정보입니다.
-              근무장소와 주소가 다를 수 있으므로
-              별도로 확인해 주세요.
-            </p>
+            <small>
+              사업장명·주소·대표자명을 수정해요.
+            </small>
+          </span>
 
-            <form onSubmit={handleSaveBusiness}>
-              <div style={{ marginBottom: 12 }}>
-                <label htmlFor="business-name">
-                  사업장명
-                </label>
-                <input
-                  id="business-name"
-                  value={business.name}
-                  onChange={(event) =>
-                    changeBusiness("name", event.target.value)
-                  }
-                  disabled={busy}
-                  required
-                  style={{ display: "block", width: "100%" }}
-                />
-              </div>
+          <span aria-hidden="true">›</span>
+        </Link>
 
-              <div style={{ marginBottom: 12 }}>
-                <label htmlFor="business-address">
-                  사업장 주소
-                </label>
-                <input
-                  id="business-address"
-                  value={business.address}
-                  onChange={(event) =>
-                    changeBusiness("address", event.target.value)
-                  }
-                  disabled={busy}
-                  required
-                  style={{ display: "block", width: "100%" }}
-                />
-              </div>
-
-              <div style={{ marginBottom: 12 }}>
-                <label htmlFor="business-owner">
-                  대표자명
-                </label>
-                <input
-                  id="business-owner"
-                  value={business.ownerName}
-                  onChange={(event) =>
-                    changeBusiness("ownerName", event.target.value)
-                  }
-                  disabled={busy}
-                  required
-                  style={{ display: "block", width: "100%" }}
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={busy}
-              >
-                {savingBusiness
-                  ? "사업장 저장 중..."
-                  : "사업장 정보 저장"}
-              </button>
-            </form>
-          </section>
-
-          <section style={{ marginTop: 28 }}>
-            <h2>3. 관련 기능</h2>
-
-            <p>
-              <Link to="/attendance">
-                출퇴근 기록하기
-              </Link>
-            </p>
-
-            <p>
-              <Link to="/petitions">
-                진정서 관리
-              </Link>
-            </p>
-
-            <p>
-              <Link to="/profile/consents">
-                위치·카메라 동의 확인
-              </Link>
-            </p>
-          </section>
-
-          <button
-            type="button"
-            onClick={refresh}
-            disabled={busy}
-            style={{ marginTop: 24 }}
-          >
-            저장된 정보 새로고침
-          </button>
-        </>
-      )}
-
-      <p style={{ marginTop: 24 }}>
-        <Link to="/profile">
+        <Link
+          className="pfs-footer-link"
+          to="/profile"
+        >
           내 정보로 돌아가기
         </Link>
-      </p>
-    </main>
+      </main>
+    </div>
   );
 }

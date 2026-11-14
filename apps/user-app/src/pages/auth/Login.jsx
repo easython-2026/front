@@ -9,6 +9,12 @@ import {
 
 import useAuth from "../../hooks/useAuth";
 
+import {
+  AuthButton,
+  AuthFrame,
+  AuthMessage,
+} from "./AuthUI";
+
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -18,37 +24,49 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const [remember, setRemember] = useState(true);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = async (event) => {
+  async function handleSubmit(event) {
     event.preventDefault();
 
     if (loading) return;
 
-    setError("");
     setLoading(true);
+    setError("");
 
     try {
-      await signIn({
-        email,
-        password,
-      });
+      // 기존 로그인 API 연결
+      await signIn(
+        {
+          email: email.trim(),
+          password,
+        },
+        {
+          remember,
+        }
+      );
 
-      // 로그인 전 접근하려던 경로
+      // 로그인 전 접근하려던 페이지
       const requestedPath = location.state?.from;
 
-      const target =
+      const isValidPath =
         typeof requestedPath?.pathname === "string" &&
         requestedPath.pathname.startsWith("/") &&
         !requestedPath.pathname.startsWith("//") &&
-        !requestedPath.pathname.startsWith("/login")
-          ? requestedPath.pathname +
-            (requestedPath.search || "") +
-            (requestedPath.hash || "")
-          : "/home";
+        !requestedPath.pathname.startsWith("/login");
 
-      navigate(target, { replace: true });
+      const target = isValidPath
+        ? requestedPath.pathname +
+          (requestedPath.search || "") +
+          (requestedPath.hash || "")
+        : "/home";
+
+      navigate(target, {
+        replace: true,
+      });
     } catch (err) {
       setError(
         err instanceof Error
@@ -58,58 +76,98 @@ export default function Login() {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   return (
-    <main style={{ padding: "24px" }}>
-      <h1>이지톤 로그인</h1>
+    <AuthFrame
+      title="로그인"
+      kicker="WELCOME BACK"
+      heading="다시 만나서 반가워요"
+      description="근무기록과 급여 비교를 이어서 확인하세요."
+    >
+      {/* 회원가입 완료 메시지 */}
+      {location.state?.signupCompleted && (
+        <AuthMessage kind="success">
+          가입이 완료되었습니다.
+          로그인해 주세요.
+        </AuthMessage>
+      )}
 
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: "16px" }}>
-          <label htmlFor="email">이메일</label>
+      <form
+        className="eth-auth-form"
+        onSubmit={handleSubmit}
+      >
+        {/* 이메일 */}
+        <label className="eth-auth-field">
+          <span>이메일</span>
 
           <input
-            id="email"
             type="email"
-            autoComplete="username"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            placeholder="name@example.com"
+            autoComplete="username"
             required
+            onChange={(event) =>
+              setEmail(event.target.value)
+            }
           />
-        </div>
+        </label>
 
-        <div style={{ marginBottom: "16px" }}>
-          <label htmlFor="password">비밀번호</label>
+        {/* 비밀번호 */}
+        <label className="eth-auth-field">
+          <span>비밀번호</span>
 
           <input
-            id="password"
             type="password"
-            autoComplete="current-password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            placeholder="비밀번호를 입력하세요"
+            autoComplete="current-password"
             required
+            onChange={(event) =>
+              setPassword(event.target.value)
+            }
           />
+        </label>
+
+        {/* 로그인 옵션 */}
+        <div className="eth-auth-login-options">
+          <label>
+            <input
+              type="checkbox"
+              checked={remember}
+              onChange={(event) =>
+                setRemember(event.target.checked)
+              }
+            />
+
+            로그인 상태 유지
+          </label>
+
+          <Link to="/forgot-password">
+            비밀번호 재설정
+          </Link>
         </div>
 
-        {error && (
-          <p role="alert" style={{ color: "red" }}>
-            {error}
-          </p>
-        )}
+        {/* 오류 안내 */}
+        <AuthMessage>{error}</AuthMessage>
 
-        <button type="submit" disabled={loading}>
+        {/* 로그인 버튼 */}
+        <AuthButton
+          type="submit"
+          loading={loading}
+          disabled={!email.trim() || !password}
+        >
           {loading ? "로그인 중..." : "로그인"}
-        </button>
+        </AuthButton>
       </form>
 
-      <p>
-        계정이 없으신가요?{" "}
-        <Link to="/signup">회원가입</Link>
-      </p>
-
-      <Link to="/forgot-password">
-        비밀번호 재설정
+      {/* 회원가입 이동 */}
+      <Link
+        className="eth-auth-text-link"
+        to="/signup"
+      >
+        처음이신가요? · 회원가입
       </Link>
-    </main>
+    </AuthFrame>
   );
 }

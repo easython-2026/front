@@ -1,0 +1,591 @@
+
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap");
+
+/* ====================================
+   일한만큼 - 인증 화면 전용 스타일
+   메인 컬러: #F56B4A
+   모바일 앱: 최대 390px
+==================================== */
+
+/* 기본 레이아웃 */
+.eth-auth-root {
+  --eth-auth-primary: #f56b4a;
+  --eth-auth-dark: #b8432c;
+  --eth-auth-bg: #fffaf7;
+  --eth-auth-text: #292524;
+  --eth-auth-muted: #78716c;
+  --eth-auth-border: #ede7e3;
+
+  display: block;
+  width: 390px;
+  max-width: 100%;
+  min-height: 100dvh;
+  margin: 0 auto;
+
+  color: var(--eth-auth-text);
+  background: var(--eth-auth-bg);
+
+  font-family:
+    "Noto Sans KR",
+    system-ui,
+    -apple-system,
+    sans-serif;
+}
+
+.eth-auth-root *,
+.eth-auth-root *::before,
+.eth-auth-root *::after {
+  box-sizing: border-box;
+}
+
+.eth-auth-root h1,
+.eth-auth-root p {
+  margin: 0;
+}
+
+.eth-auth-root button,
+.eth-auth-root input,
+.eth-auth-root select {
+  font: inherit;
+}
+
+.eth-auth-root button {
+  cursor: pointer;
+}
+
+.eth-auth-root a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.eth-auth-root svg {
+  flex-shrink: 0;
+}
+
+/* ====================================
+   1. 온보딩 화면
+==================================== */
+
+.eth-auth-intro {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+/* 상단 브랜드 */
+.eth-auth-intro-top {
+  flex: 0 0 68px;
+  padding: 14px 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.eth-auth-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.eth-auth-logo span {
+  width: 31px;
+  height: 31px;
+  border-radius: 10px;
+
+  display: grid;
+  place-items: center;
+
+  color: white;
+  background: var(--eth-auth-primary);
+  font-weight: 800;
+}
+
+.eth-auth-logo b {
+  font-size: 19px;
+}
+
+/* 온보딩 메인 일러스트 */
+.eth-auth-hero {
+  position: relative;
+  flex: 0 0 clamp(290px, 39svh, 345px);
+
+  display: grid;
+  place-items: center;
+
+  margin: 0 20px;
+  border-radius: 26px;
+
+  background: linear-gradient(
+    145deg,
+    #fff1eb 0%,
+    #fde2d8 100%
+  );
+
+  overflow: hidden;
+}
+
+/* 원형 배경 */
+.eth-auth-orbit {
+  position: absolute;
+  border: 1px solid rgba(184, 67, 44, 0.12);
+  border-radius: 50%;
+}
+
+.eth-auth-orbit-one {
+  width: 330px;
+  height: 330px;
+}
+
+.eth-auth-orbit-two {
+  width: 235px;
+  height: 235px;
+}
+
+/* 중앙 카드 */
+.eth-auth-visual-card {
+  position: relative;
+  z-index: 1;
+
+  width: 176px;
+  min-height: 205px;
+
+  border: 1px solid #fff;
+  border-radius: 25px;
+
+  background: rgba(255, 255, 255, 0.86);
+
+  box-shadow:
+    0 30px 80px rgba(138, 69, 46, 0.15);
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+
+  transform: rotate(-3deg);
+}
+
+.eth-auth-visual-card > svg {
+  color: var(--eth-auth-primary);
+}
+
+.eth-auth-visual-card span {
+  font-size: 11px;
+  color: var(--eth-auth-muted);
+}
+
+.eth-auth-visual-card strong {
+  font-size: 21px;
+}
+
+/* 떠 있는 배지 */
+.eth-auth-chip {
+  position: absolute;
+  z-index: 2;
+
+  padding: 9px 11px;
+  background: white;
+  border-radius: 14px;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  box-shadow:
+    0 8px 30px rgba(72, 45, 35, 0.07);
+
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.eth-auth-chip svg {
+  color: var(--eth-auth-primary);
+}
+
+.eth-auth-chip-a {
+  left: 4%;
+  top: 16%;
+}
+
+.eth-auth-chip-b {
+  right: 3%;
+  bottom: 14%;
+}
+
+/* 온보딩 설명 */
+.eth-auth-intro-copy {
+  flex: 1;
+  width: 100%;
+
+  padding:
+    26px 22px
+    max(24px, env(safe-area-inset-bottom));
+
+  display: flex;
+  flex-direction: column;
+}
+
+/* 강조 문구 */
+.eth-auth-eyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--eth-auth-dark);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.eth-auth-intro-copy h1,
+.eth-auth-heading h1 {
+  white-space: pre-line;
+  font-size: 29px;
+  line-height: 1.24;
+  letter-spacing: -0.05em;
+  margin: 8px 0 11px;
+}
+
+.eth-auth-intro-description {
+  color: var(--eth-auth-muted);
+  font-size: 13px;
+  line-height: 1.65;
+  max-width: 340px;
+}
+
+/* 온보딩 단계 표시 */
+.eth-auth-dots {
+  display: flex;
+  gap: 7px;
+
+  margin: auto 0 16px;
+  padding-top: 20px;
+}
+
+.eth-auth-dots i {
+  width: 7px;
+  height: 7px;
+  border-radius: 9px;
+
+  background: #d9d2ce;
+
+  transition:
+    width 0.2s,
+    background 0.2s;
+}
+
+.eth-auth-dots i.active {
+  width: 25px;
+  background: var(--eth-auth-primary);
+}
+
+/* ====================================
+   2. 공통 버튼
+==================================== */
+
+.eth-auth-primary {
+  width: 100%;
+  min-height: 54px;
+  padding: 0 20px;
+
+  border: 1px solid transparent;
+  border-radius: 14px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+
+  color: white !important;
+  background: var(--eth-auth-primary);
+
+  box-shadow:
+    0 7px 18px rgba(245, 107, 74, 0.2);
+
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.eth-auth-primary:hover:not(:disabled) {
+  background: #e95c3c;
+}
+
+.eth-auth-primary:disabled {
+  background: #ddd8d5;
+  color: #9d9692 !important;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* 하단 텍스트 링크 */
+.eth-auth-text-link {
+  display: block;
+  margin-top: 5px;
+  width: 100%;
+
+  padding: 10px;
+  text-align: center;
+
+  color: var(--eth-auth-muted) !important;
+
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ====================================
+   3. 로그인 / 회원가입 / 비밀번호 재설정
+==================================== */
+
+.eth-auth-screen {
+  min-height: 100dvh;
+  overflow-x: clip;
+}
+
+/* 상단바 */
+.eth-auth-topbar {
+  min-height: 65px;
+  padding: 10px 20px;
+
+  display: grid;
+  grid-template-columns: 38px 1fr 38px;
+  align-items: center;
+
+  position: sticky;
+  top: 0;
+  z-index: 20;
+
+  background: rgba(255, 250, 247, 0.95);
+
+  border-bottom:
+    1px solid rgba(237, 231, 227, 0.75);
+
+  backdrop-filter: blur(12px);
+}
+
+.eth-auth-topbar strong {
+  font-size: 17px;
+  text-align: left;
+}
+
+.eth-auth-back {
+  display: grid;
+  place-items: center;
+
+  width: 30px;
+  height: 36px;
+
+  margin-left: -7px;
+}
+
+/* 본문 */
+.eth-auth-content {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+
+  padding:
+    34px 22px
+    max(50px, env(safe-area-inset-bottom));
+}
+
+.eth-auth-heading > p:last-child {
+  color: var(--eth-auth-muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+/* 입력 폼 */
+.eth-auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.eth-auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  width: 100%;
+}
+
+.eth-auth-field > span,
+.eth-auth-field > label {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* 입력창 */
+.eth-auth-field input,
+.eth-auth-field select {
+  width: 100%;
+  min-width: 0;
+  min-height: 50px;
+
+  padding: 0 14px;
+
+  border: 1px solid #ded8d4;
+  border-radius: 12px;
+
+  outline: none;
+  background: white;
+  color: var(--eth-auth-text);
+
+  font-size: 13px;
+}
+
+.eth-auth-field select {
+  appearance: auto;
+}
+
+.eth-auth-field input:focus,
+.eth-auth-field select:focus {
+  border-color: var(--eth-auth-primary);
+  box-shadow:
+    0 0 0 3px #fff0eb;
+}
+
+/* 안내 문구 */
+.eth-auth-field small {
+  font-size: 11px;
+  color: var(--eth-auth-muted);
+}
+
+.eth-auth-field .eth-auth-success {
+  color: #15803d;
+}
+
+/* ====================================
+   4. 이메일 중복 확인
+==================================== */
+
+.eth-auth-email-row {
+  display: flex;
+  gap: 8px;
+}
+
+.eth-auth-email-row input {
+  flex: 1;
+}
+
+.eth-auth-email-row button {
+  flex: 0 0 auto;
+
+  padding: 0 9px;
+
+  border: 1px solid #f3d6cc;
+  border-radius: 12px;
+
+  background: #fff0eb;
+  color: var(--eth-auth-dark);
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.eth-auth-email-row button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ====================================
+   5. 필수 / 선택 동의
+==================================== */
+
+.eth-auth-agreements {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+
+  padding: 15px;
+
+  border: 1px solid var(--eth-auth-border);
+  border-radius: 14px;
+
+  background: white;
+}
+
+.eth-auth-agreements label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+
+  font-size: 12px;
+}
+
+.eth-auth-agreements label span {
+  line-height: 1.5;
+}
+
+.eth-auth-agreements b {
+  color: var(--eth-auth-dark);
+  margin-right: 4px;
+}
+
+.eth-auth-agreements em {
+  color: var(--eth-auth-muted);
+  font-style: normal;
+  margin-right: 4px;
+}
+
+.eth-auth-agreements > small {
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--eth-auth-muted);
+}
+
+/* 체크박스 */
+.eth-auth-agreements input[type="checkbox"],
+.eth-auth-login-options input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  margin: 1px 0 0;
+
+  accent-color: var(--eth-auth-primary);
+}
+
+/* ====================================
+   6. 로그인 옵션
+==================================== */
+
+.eth-auth-login-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  font-size: 12px;
+  color: var(--eth-auth-muted);
+}
+
+.eth-auth-login-options label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+/* ====================================
+   7. 오류 / 성공 메시지
+==================================== */
+
+.eth-auth-notice {
+  padding: 13px;
+  border-radius: 13px;
+
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.eth-auth-notice-error {
+  color: #dc2626;
+  background: #fff0f0;
+}
+
+.eth-auth-notice-success {
+  color: #15803d;
+  background: #ecfdf3;
+}

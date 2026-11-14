@@ -1,0 +1,829 @@
+
+/* ============================================
+   일한만큼 - 진정서 Figma 디자인
+
+   메인 컬러: #F56B4A
+   배경: #FFFAF7
+   모바일 앱 전용: 390px
+============================================ */
+
+/* 기본 화면 */
+
+.pf-screen {
+  --pf-main: #F56B4A;
+  --pf-bg: #FFFAF7;
+  --pf-ink: #292524;
+  --pf-muted: #78716C;
+  --pf-border: #EDE7E3;
+
+  width: 100%;
+  max-width: 390px;
+  min-height: 100dvh;
+  margin: 0 auto;
+
+  background: var(--pf-bg);
+  color: var(--pf-ink);
+
+  font-family:
+    "Noto Sans KR",
+    system-ui,
+    -apple-system,
+    sans-serif;
+}
+
+.pf-screen *,
+.pf-screen *::before,
+.pf-screen *::after {
+  box-sizing: border-box;
+}
+
+.pf-screen h1,
+.pf-screen h2,
+.pf-screen p {
+  margin: 0;
+}
+
+.pf-screen a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.pf-screen button,
+.pf-screen input,
+.pf-screen select,
+.pf-screen textarea {
+  font: inherit;
+}
+
+.pf-screen button {
+  cursor: pointer;
+}
+
+.pf-screen button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* ============================================
+   상단바
+============================================ */
+
+.pf-header {
+  height: 65px;
+  padding: 8px 18px;
+
+  background: var(--pf-bg);
+  border-bottom: 1px solid var(--pf-border);
+
+  display: grid;
+  grid-template-columns: 34px 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.pf-header > a {
+  font-size: 30px;
+  line-height: 1;
+}
+
+.pf-header strong {
+  font-size: 16px;
+  font-weight: 750;
+}
+
+.pf-header button {
+  border: 0;
+  background: none;
+  font-size: 10px;
+  color: #B8432C;
+}
+
+/* ============================================
+   메인 콘텐츠
+============================================ */
+
+.pf-content {
+  padding: 21px 18px 35px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ============================================
+   3단계 진행 표시
+============================================ */
+
+.pf-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 4px;
+  padding: 5px 0 9px;
+}
+
+.pf-stepper > div {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  color: #AAA3A0;
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.pf-stepper > div:not(:last-child)::after {
+  content: "";
+
+  width: 14px;
+  height: 1px;
+
+  display: block;
+  background: #D8D2CF;
+
+  margin-left: 3px;
+}
+
+.pf-stepper i {
+  width: 23px;
+  height: 23px;
+
+  flex: none;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 50%;
+  background: #EBE7E4;
+
+  font-style: normal;
+}
+
+.pf-stepper .active {
+  color: #B8432C;
+  font-weight: 800;
+}
+
+.pf-stepper .active i {
+  background: var(--pf-main);
+  color: white;
+}
+
+.pf-stepper button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+
+  padding: 0;
+
+  font-size: inherit;
+  font-weight: inherit;
+  white-space: nowrap;
+}
+
+/* ============================================
+   페이지 제목
+============================================ */
+
+.pf-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pf-eyebrow {
+  color: #B8432C;
+
+  font-size: 10px;
+  font-weight: 800;
+
+  letter-spacing: 0.12em;
+}
+
+.pf-heading h1 {
+  font-size: 26px;
+  letter-spacing: -0.05em;
+  line-height: 1.3;
+  font-weight: 800;
+}
+
+.pf-heading > p:last-child {
+  font-size: 12px;
+  line-height: 1.65;
+
+  color: var(--pf-muted);
+}
+
+/* ============================================
+   공통 카드
+============================================ */
+
+.pf-card {
+  background: white;
+
+  border: 1px solid var(--pf-border);
+  border-radius: 17px;
+
+  padding: 16px;
+
+  box-shadow:
+    0 3px 16px rgba(70, 45, 35, 0.035);
+
+  min-width: 0;
+}
+
+.pf-card h2 {
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.pf-muted {
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--pf-muted);
+}
+
+.pf-muted a {
+  color: #B8432C;
+  text-decoration: underline;
+}
+
+/* ============================================
+   상태 배지
+============================================ */
+
+.pf-pill {
+  flex: none;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 5px 9px;
+  border-radius: 99px;
+
+  font-size: 10px;
+  font-weight: 700;
+  font-style: normal;
+
+  color: #78716C;
+  background: #F5F3F1;
+
+  white-space: nowrap;
+}
+
+.pf-good {
+  background: #ECFDF3;
+  color: #15803D;
+}
+
+.pf-warn {
+  background: #FFF7DF;
+  color: #A16207;
+}
+
+.pf-info {
+  background: #EAF3FF;
+  color: #2563EB;
+}
+
+/* ============================================
+   상태 메시지
+============================================ */
+
+.pf-notice {
+  padding: 12px 13px;
+
+  border-radius: 12px;
+
+  font-size: 11px;
+  line-height: 1.6;
+
+  background: #EAF3FF;
+  color: #2563EB;
+}
+
+.pf-error {
+  background: #FFF0F0;
+  color: #DC2626;
+}
+
+.pf-success {
+  background: #ECFDF3;
+  color: #15803D;
+}
+
+.pf-warn-box {
+  background: #FFF8E6;
+  color: #8D580E;
+}
+
+/* ============================================
+   1단계 - 정보 불러오기
+============================================ */
+
+.pf-load-list > h2 {
+  margin-bottom: 4px;
+}
+
+.pf-load-list > div {
+  display: flex;
+  align-items: center;
+
+  gap: 9px;
+  padding: 12px 0;
+
+  border-bottom: 1px solid var(--pf-border);
+}
+
+.pf-load-list > div:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+/* 확인 아이콘 */
+
+.pf-check {
+  width: 20px;
+  height: 20px;
+
+  flex: none;
+
+  border-radius: 50%;
+
+  display: grid;
+  place-items: center;
+
+  background: #FFF7DF;
+  color: #A16207;
+
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.pf-check.ok {
+  background: #ECFDF3;
+  color: #15803D;
+}
+
+/* 정보 조회 상태 */
+
+.pf-load-text {
+  flex: 1;
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 3px;
+}
+
+.pf-load-text b {
+  font-size: 11px;
+}
+
+.pf-load-text small {
+  font-size: 9px;
+  color: var(--pf-muted);
+  line-height: 1.4;
+}
+
+/* ============================================
+   AI 사건 요약 카드
+============================================ */
+
+.pf-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+
+  gap: 10px;
+}
+
+.pf-summary > p {
+  font-size: 11px;
+  line-height: 1.7;
+  color: #4C4642;
+}
+
+/* ============================================
+   기간 설정 폼
+============================================ */
+
+.pf-form {
+  display: flex;
+  flex-direction: column;
+
+  gap: 11px;
+}
+
+.pf-form h2 {
+  font-size: 15px;
+}
+
+.pf-form h2 small {
+  color: var(--pf-muted);
+  font-size: 10px;
+  font-weight: 400;
+}
+
+.pf-field {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.pf-field label {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pf-date-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+}
+
+.pf-date-fields label {
+  display: flex;
+  flex-direction: column;
+
+  gap: 6px;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  min-width: 0;
+}
+
+.pf-form input,
+.pf-field select {
+  width: 100%;
+  min-width: 0;
+
+  border: 1px solid #DED8D4;
+  border-radius: 10px;
+
+  min-height: 43px;
+  padding: 8px;
+
+  color: var(--pf-ink);
+  background: white;
+
+  font-size: 12px;
+}
+
+/* ============================================
+   공통 버튼
+============================================ */
+
+.pf-primary,
+.pf-secondary {
+  width: 100%;
+  min-height: 51px;
+
+  border-radius: 13px;
+
+  padding: 10px 14px;
+
+  border: 1px solid transparent;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  text-align: center;
+
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.pf-primary {
+  background: var(--pf-main);
+  color: white;
+
+  box-shadow:
+    0 7px 18px rgba(245, 107, 74, 0.17);
+}
+
+.pf-secondary {
+  background: white;
+  color: #B8432C;
+
+  border-color: #F3D6CC;
+}
+
+.pf-actions {
+  display: flex;
+  flex-direction: column;
+
+  gap: 9px;
+}
+
+.pf-as-link {
+  color: #B8432C !important;
+}
+
+.pf-footer-link {
+  text-align: center;
+  padding: 12px;
+
+  font-size: 11px;
+  color: var(--pf-muted) !important;
+}
+
+/* ============================================
+   2단계 - 한국어 / 선택 언어 / 나란히 보기
+============================================ */
+
+.pf-doc-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+
+  gap: 3px;
+  padding: 3px;
+
+  border-radius: 11px;
+  background: #F3EFED;
+
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.pf-doc-tabs button {
+  border: 0;
+  padding: 10px 4px;
+
+  border-radius: 9px;
+  background: transparent;
+
+  color: var(--pf-muted);
+
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.pf-doc-tabs button.active {
+  background: white;
+  color: var(--pf-ink);
+
+  box-shadow:
+    0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+/* ============================================
+   Figma 진정서 문서 카드
+============================================ */
+
+.pf-document {
+  padding: 21px;
+}
+
+.pf-doc-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding-bottom: 12px;
+
+  border-bottom: 2px solid var(--pf-ink);
+}
+
+.pf-doc-title strong {
+  font-size: 17px;
+  font-weight: 800;
+}
+
+/* 문서 항목 */
+
+.pf-doc-field {
+  border-bottom: 1px solid var(--pf-border);
+  padding: 13px 0;
+}
+
+.pf-doc-field:last-child {
+  border-bottom: 0;
+}
+
+.pf-doc-field > span {
+  font-size: 9px;
+  color: var(--pf-muted);
+}
+
+/* 한국어 / 번역문 본문 */
+
+.pf-doc-values {
+  padding-top: 5px;
+}
+
+.pf-doc-values > div {
+  min-width: 0;
+}
+
+.pf-doc-values p {
+  font-size: 11px;
+  line-height: 1.65;
+
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.pf-doc-values small {
+  display: block;
+
+  font-size: 9px;
+  color: var(--pf-muted);
+
+  margin-bottom: 5px;
+}
+
+/* 나란히 보기 */
+
+.pf-doc-values.pf-side-by-side {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+
+  gap: 9px;
+}
+
+.pf-side-by-side > div + div {
+  padding-left: 9px;
+  border-left: 1px solid var(--pf-border);
+}
+
+/* 수정 가능한 항목 */
+
+.pf-doc-values input,
+.pf-doc-values textarea {
+  display: block;
+
+  width: 100%;
+  min-width: 0;
+
+  padding: 9px 10px;
+
+  border: 1px solid #E1D8D3;
+  border-radius: 9px;
+
+  background: #FFFCFA;
+  color: var(--pf-ink);
+
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.pf-doc-values textarea {
+  resize: vertical;
+}
+
+.pf-doc-values input:disabled,
+.pf-doc-values textarea:disabled {
+  background: #F7F5F3;
+}
+
+.pf-translated {
+  color: #4C4642;
+}
+
+/* AI 추출 근거 */
+
+.pf-claims {
+  overflow: auto;
+
+  font-size: 10px;
+  line-height: 1.6;
+
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* ============================================
+   3단계 - 증거 확인
+============================================ */
+
+.pf-attach-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 8px;
+  margin-bottom: 9px;
+}
+
+.pf-attach-header > span {
+  color: var(--pf-muted);
+  font-size: 10px;
+}
+
+.pf-attachments > .pf-muted {
+  margin-bottom: 7px;
+}
+
+/* 개별 증거 항목 */
+
+.pf-attach-row {
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+  padding: 12px 0;
+
+  border-bottom: 1px solid var(--pf-border);
+}
+
+.pf-attach-row > input {
+  width: 16px;
+  height: 16px;
+
+  margin: 0;
+  accent-color: var(--pf-main);
+
+  flex: none;
+}
+
+.pf-attach-row > span {
+  display: flex;
+  flex-direction: column;
+
+  flex: 1;
+  min-width: 0;
+
+  gap: 5px;
+}
+
+.pf-attach-row b {
+  font-size: 11px;
+}
+
+.pf-attach-row small {
+  font-size: 9px;
+  color: var(--pf-muted);
+
+  overflow-wrap: anywhere;
+}
+
+.pf-attach-row details {
+  font-size: 9px;
+  overflow-wrap: anywhere;
+}
+
+.pf-attach-row code {
+  display: block;
+  font-size: 9px;
+  overflow-wrap: anywhere;
+}
+
+.pf-attach-row .pf-pill {
+  font-size: 9px;
+}
+
+.pf-attachments > .pf-primary {
+  margin-top: 13px;
+}
+
+.pf-attachments > .pf-secondary {
+  margin-top: 7px;
+}
+
+/* ============================================
+   공식 진정 절차 안내
+============================================ */
+
+.pf-official {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+
+  gap: 12px;
+  align-items: start;
+}
+
+.pf-official-icon {
+  width: 42px;
+  height: 42px;
+
+  background: #FFF0EB;
+  color: var(--pf-main);
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 12px;
+  font-size: 22px;
+}
+
+.pf-official b {
+  font-size: 12px;
+}
+
+.pf-official p {
+  color: var(--pf-muted);
+
+  font-size: 10px;
+  line-height: 1.7;
+
+  margin-top: 4px;
+}

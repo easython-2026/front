@@ -1,0 +1,715 @@
+
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap");
+
+/* ============================================
+   일한만큼 - 근로계약서 등록
+   Figma Contract Upload Screen
+
+   Main Color: #F56B4A
+   Background: #FFFAF7
+   Mobile Width: 390px
+============================================ */
+
+/* 기본 페이지 */
+
+.cau-contract-page {
+  --cau-primary: #f56b4a;
+  --cau-primary-dark: #b8432c;
+  --cau-primary-light: #fff0eb;
+
+  --cau-background: #fffaf7;
+  --cau-surface: #ffffff;
+
+  --cau-text: #292524;
+  --cau-secondary: #78716c;
+  --cau-border: #ede7e3;
+
+  width: 100%;
+  max-width: 390px;
+  min-height: 100dvh;
+
+  margin: 0 auto;
+
+  background: var(--cau-background);
+  color: var(--cau-text);
+
+  font-family:
+    "Noto Sans KR",
+    system-ui,
+    -apple-system,
+    sans-serif;
+
+  overflow-x: hidden;
+}
+
+.cau-contract-page *,
+.cau-contract-page *::before,
+.cau-contract-page *::after {
+  box-sizing: border-box;
+}
+
+.cau-contract-page h1,
+.cau-contract-page h2,
+.cau-contract-page p {
+  margin: 0;
+}
+
+.cau-contract-page a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.cau-contract-page button,
+.cau-contract-page input {
+  font: inherit;
+}
+
+.cau-contract-page button {
+  cursor: pointer;
+}
+
+.cau-contract-page button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.cau-contract-page svg {
+  flex-shrink: 0;
+}
+
+/* ============================================
+   상단 헤더 - Figma TopBar
+============================================ */
+
+.cau-topbar {
+  width: 100%;
+  height: 65px;
+
+  display: grid;
+  grid-template-columns: 38px 1fr 38px;
+
+  align-items: center;
+
+  padding: 10px 20px;
+
+  background: rgba(
+    255,
+    250,
+    247,
+    0.95
+  );
+
+  border-bottom:
+    1px solid rgba(
+      237,
+      231,
+      227,
+      0.75
+    );
+
+  position: sticky;
+  top: 0;
+  z-index: 20;
+
+  backdrop-filter: blur(12px);
+}
+
+.cau-topbar strong {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+
+  text-align: left;
+}
+
+.cau-back-button {
+  display: grid;
+  place-items: center;
+
+  width: 38px;
+  height: 38px;
+
+  margin-left: -7px;
+
+  color: var(--cau-text);
+}
+
+.cau-topbar-space {
+  width: 38px;
+}
+
+/* ============================================
+   메인 콘텐츠 영역
+============================================ */
+
+.cau-content {
+  display: flex;
+  flex-direction: column;
+
+  gap: 15px;
+
+  padding:
+    20px 18px
+    max(35px, env(safe-area-inset-bottom));
+
+  width: 100%;
+  min-width: 0;
+}
+
+/* ============================================
+   페이지 제목
+============================================ */
+
+.cau-heading {
+  display: flex;
+  flex-direction: column;
+
+  padding-bottom: 2px;
+}
+
+.cau-eyebrow {
+  color: var(--cau-primary-dark);
+
+  font-size: 11px;
+  font-weight: 800;
+
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.cau-heading h1 {
+  font-size: 28px;
+  font-weight: 800;
+
+  line-height: 1.24;
+  letter-spacing: -0.05em;
+
+  margin: 8px 0 10px;
+}
+
+.cau-description {
+  max-width: 340px;
+
+  font-size: 14px;
+  font-weight: 400;
+
+  line-height: 1.7;
+
+  color: var(--cau-secondary);
+
+  word-break: keep-all;
+}
+
+/* ============================================
+   촬영 / 파일 업로드 선택 카드
+   Figma upload-option
+============================================ */
+
+.cau-upload-option {
+  width: 100%;
+  min-height: 78px;
+
+  padding: 15px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  background: var(--cau-surface);
+
+  border: 1px solid var(--cau-border);
+  border-radius: 15px;
+
+  color: var(--cau-text);
+
+  text-align: left;
+
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+
+.cau-upload-option:active:not(:disabled) {
+  background: #fff8f4;
+  border-color: #f6c3b5;
+}
+
+/* 아이콘 배경 */
+
+.cau-option-icon {
+  width: 44px;
+  height: 44px;
+
+  flex: 0 0 44px;
+
+  display: grid;
+  place-items: center;
+
+  background: var(--cau-primary-light);
+
+  color: var(--cau-primary);
+
+  border-radius: 12px;
+}
+
+/* 카드 텍스트 */
+
+.cau-option-copy {
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+
+  flex: 1;
+  min-width: 0;
+}
+
+.cau-option-copy b {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.5;
+
+  color: var(--cau-text);
+}
+
+.cau-option-copy small {
+  font-size: 9px;
+  font-weight: 400;
+
+  line-height: 1.5;
+
+  color: var(--cau-secondary);
+}
+
+.cau-option-chevron {
+  display: flex;
+  align-items: center;
+
+  color: #a8a09b;
+}
+
+/* 숨겨진 파일 선택창 */
+
+.cau-hidden-input {
+  position: absolute;
+
+  width: 1px;
+  height: 1px;
+
+  padding: 0;
+  margin: -1px;
+
+  overflow: hidden;
+  opacity: 0;
+
+  pointer-events: none;
+}
+
+/* ============================================
+   Figma 촬영 전 확인 카드
+============================================ */
+
+.cau-document-guide {
+  width: 100%;
+
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr);
+
+  gap: 15px;
+
+  padding: 18px;
+
+  background: var(--cau-surface);
+
+  border: 1px solid var(--cau-border);
+  border-radius: 18px;
+
+  box-shadow:
+    0 3px 16px rgba(
+      70,
+      45,
+      35,
+      0.035
+    );
+}
+
+/* 문서 미리보기 일러스트 */
+
+.cau-document-mock {
+  width: 100%;
+  height: 130px;
+
+  background: #f3efec;
+
+  border: 1px solid #ddd6d2;
+  border-radius: 8px;
+
+  padding: 13px;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 9px;
+}
+
+.cau-document-mock span {
+  display: block;
+
+  width: 100%;
+  height: 4px;
+
+  background: #cec5c0;
+  border-radius: 4px;
+
+  flex-shrink: 0;
+}
+
+.cau-document-mock span:nth-child(2) {
+  width: 65%;
+}
+
+/* 촬영 안내 텍스트 */
+
+.cau-guide-copy {
+  min-width: 0;
+}
+
+.cau-guide-copy > b {
+  font-size: 12px;
+  font-weight: 700;
+
+  line-height: 1.5;
+}
+
+.cau-guide-copy ul {
+  margin: 7px 0 0;
+  padding-left: 16px;
+
+  color: var(--cau-secondary);
+
+  font-size: 9px;
+  font-weight: 400;
+
+  line-height: 2;
+  word-break: keep-all;
+}
+
+.cau-guide-copy li {
+  margin: 0;
+}
+
+/* ============================================
+   Figma 주의 안내
+============================================ */
+
+.cau-warning {
+  width: 100%;
+
+  display: flex;
+  align-items: flex-start;
+
+  gap: 10px;
+
+  padding: 13px;
+
+  border-radius: 13px;
+
+  background: #fff8e7;
+
+  color: #7c460e;
+
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.cau-warning span,
+.cau-error span {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 실제 API / 파일 오류 */
+
+.cau-error {
+  width: 100%;
+
+  display: flex;
+  align-items: flex-start;
+
+  gap: 10px;
+
+  padding: 13px;
+
+  border-radius: 13px;
+
+  background: #fff0f0;
+
+  color: #dc2626;
+
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+/* ============================================
+   파일 선택 후 미리보기 카드
+============================================ */
+
+.cau-preview-card {
+  display: flex;
+  flex-direction: column;
+
+  gap: 14px;
+
+  padding: 16px;
+
+  background: #fff;
+
+  border: 1px solid #f3c4b6;
+  border-radius: 18px;
+
+  box-shadow:
+    0 4px 15px rgba(
+      245,
+      107,
+      74,
+      0.05
+    );
+}
+
+.cau-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 10px;
+}
+
+.cau-section-header h2 {
+  font-size: 16px;
+  font-weight: 700;
+
+  letter-spacing: -0.03em;
+}
+
+.cau-section-header button {
+  display: flex;
+  align-items: center;
+
+  gap: 5px;
+
+  padding: 5px;
+
+  border: 0;
+  background: transparent;
+
+  color: var(--cau-primary-dark);
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* 이미지 및 PDF 미리보기 */
+
+.cau-preview-frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 100%;
+  height: 250px;
+
+  overflow: hidden;
+
+  background: #f7f5f3;
+
+  border: 1px solid var(--cau-border);
+  border-radius: 12px;
+}
+
+.cau-preview-frame img {
+  display: block;
+
+  max-width: 100%;
+  max-height: 100%;
+
+  object-fit: contain;
+}
+
+.cau-preview-frame iframe {
+  display: block;
+
+  width: 100%;
+  height: 100%;
+
+  border: 0;
+}
+
+/* 파일명 및 용량 */
+
+.cau-file-information {
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  padding: 11px;
+
+  border: 1px solid var(--cau-border);
+  border-radius: 12px;
+
+  background: #fffaf7;
+}
+
+.cau-file-information > svg {
+  color: var(--cau-primary);
+}
+
+.cau-file-information > div {
+  flex: 1;
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+}
+
+.cau-file-information b {
+  font-size: 11px;
+  font-weight: 700;
+
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cau-file-information span {
+  font-size: 10px;
+  color: var(--cau-secondary);
+}
+
+.cau-file-information button {
+  display: grid;
+  place-items: center;
+
+  width: 30px;
+  height: 30px;
+
+  background: transparent;
+  border: 0;
+
+  color: #a39a95;
+}
+
+/* ============================================
+   AI 계약서 분석 버튼
+============================================ */
+
+.cau-primary-button {
+  width: 100%;
+  min-height: 54px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 9px;
+
+  padding: 12px 18px;
+
+  border: 1px solid transparent;
+  border-radius: 14px;
+
+  background: var(--cau-primary);
+  color: white;
+
+  box-shadow:
+    0 7px 18px rgba(
+      245,
+      107,
+      74,
+      0.2
+    );
+
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.cau-primary-button:active:not(:disabled) {
+  background: #e95c3c;
+}
+
+.cau-primary-button:disabled {
+  background: #ddd8d5;
+  color: #9d9692;
+
+  box-shadow: none;
+}
+
+/* 로딩 회전 아이콘 */
+
+.cau-spinner {
+  width: 18px;
+  height: 18px;
+
+  display: inline-block;
+
+  border: 2px solid rgba(
+    255,
+    255,
+    255,
+    0.35
+  );
+
+  border-top-color: white;
+  border-radius: 50%;
+
+  animation:
+    cau-rotate 0.8s linear infinite;
+}
+
+@keyframes cau-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================
+   기존 계약서 목록 이동
+============================================ */
+
+.cau-contract-list-link {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  gap: 5px;
+
+  width: 100%;
+
+  padding: 12px;
+
+  color: var(--cau-secondary) !important;
+
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ============================================
+   모바일 앱 전용
+============================================ */
+
+.cau-contract-page {
+  width: 390px;
+  max-width: 100%;
+}
+
+.cau-content {
+  min-width: 0;
+}
+
+.cau-contract-page :focus-visible {
+  outline: 2px solid var(--cau-primary);
+  outline-offset: 3px;
+}
