@@ -1,8 +1,19 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { getAdminConsultationDetail } from "../services/adminConsultationApi";
+
+import {
+  getAdminConsultationDetail,
+} from "../services/adminConsultationApi";
+
+import AdminCaseActions from "../components/AdminCaseActions";
+import AdminInfoRequests from "../components/AdminInfoRequests";
+
 import "./AdminCaseDetail.css";
+
+// ========================================
+// 상태 및 표시 문구
+// ========================================
 
 const STATUS_LABELS = {
   RECEIVED: "접수",
@@ -33,17 +44,26 @@ const FLAG_LABELS = {
   MISSING_CLOCK_OUT: "퇴근 기록 누락",
 };
 
-const formatMoney = (amount) =>
-  amount == null
-    ? "확인 필요"
-    : `${Number(amount).toLocaleString("ko-KR")}원`;
+// ========================================
+// 데이터 표시 유틸리티
+// ========================================
+
+function formatMoney(amount) {
+  if (amount == null) {
+    return "확인 필요";
+  }
+
+  return `${Number(amount).toLocaleString("ko-KR")}원`;
+}
 
 function formatDate(value, withTime = false) {
   if (!value) return "-";
 
   const date = new Date(value);
 
-  if (Number.isNaN(date.getTime())) return "-";
+  if (Number.isNaN(date.getTime())) {
+    return "-";
+  }
 
   return new Intl.DateTimeFormat("ko-KR", {
     timeZone: "Asia/Seoul",
@@ -51,7 +71,11 @@ function formatDate(value, withTime = false) {
     month: "2-digit",
     day: "2-digit",
     ...(withTime
-      ? { hour: "2-digit", minute: "2-digit", hour12: false }
+      ? {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        }
       : {}),
   }).format(date);
 }
@@ -60,7 +84,10 @@ function formatTime(value) {
   if (!value) return "-";
 
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "-";
+
+  if (Number.isNaN(date.getTime())) {
+    return "-";
+  }
 
   return new Intl.DateTimeFormat("ko-KR", {
     timeZone: "Asia/Seoul",
@@ -71,13 +98,19 @@ function formatTime(value) {
 }
 
 function formatMinutes(minutes) {
-  if (minutes == null) return "확인 필요";
+  if (minutes == null) {
+    return "확인 필요";
+  }
 
   const hours = Math.floor(minutes / 60);
   const rest = minutes % 60;
 
   return `${hours}시간 ${rest}분`;
 }
+
+// ========================================
+// 관리자 사건 상세 페이지
+// ========================================
 
 export default function AdminCaseDetail() {
   const { caseId } = useParams();
@@ -89,6 +122,11 @@ export default function AdminCaseDetail() {
   const [errorCode, setErrorCode] = useState("");
   const [reloadKey, setReloadKey] = useState(0);
 
+  // ========================================
+  // 사건 상세 조회
+  // Mock / 실제 API 공통
+  // ========================================
+
   useEffect(() => {
     let active = true;
 
@@ -99,19 +137,25 @@ export default function AdminCaseDetail() {
       setDetail(null);
 
       try {
-        const data =
-          await getAdminConsultationDetail(caseId);
+        const data = await getAdminConsultationDetail(
+          caseId
+        );
 
-        if (active) setDetail(data);
+        if (active) {
+          setDetail(data);
+        }
       } catch (err) {
         if (!active) return;
 
         setErrorCode(err.errorCode || "");
         setError(
-          err.message || "사건 상세 조회에 실패했습니다."
+          err.message ||
+            "사건 상세 조회에 실패했습니다."
         );
       } finally {
-        if (active) setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       }
     }
 
@@ -121,6 +165,18 @@ export default function AdminCaseDetail() {
       active = false;
     };
   }, [caseId, reloadKey]);
+
+  // ========================================
+  // 저장 성공 후 상세 정보 다시 조회
+  // ========================================
+
+  const handleCaseUpdated = () => {
+    setReloadKey((prev) => prev + 1);
+  };
+
+  // ========================================
+  // 로딩 상태
+  // ========================================
 
   if (loading) {
     return (
@@ -132,6 +188,10 @@ export default function AdminCaseDetail() {
     );
   }
 
+  // ========================================
+  // 오류 상태
+  // ========================================
+
   if (error) {
     const accessDenied = [
       "FORBIDDEN",
@@ -141,24 +201,30 @@ export default function AdminCaseDetail() {
     return (
       <div className="admin-detail">
         <button
+          type="button"
           className="admin-detail__back"
           onClick={() => navigate("/cases")}
         >
           ← 사건 목록
         </button>
 
-        <div className="admin-detail__feedback" role="alert">
+        <div
+          className="admin-detail__feedback"
+          role="alert"
+        >
           <h2>
             {accessDenied
               ? "사건 정보를 열람할 수 없습니다."
               : "사건 정보를 불러오지 못했습니다."}
           </h2>
+
           <p>{error}</p>
 
           {!accessDenied && (
             <button
+              type="button"
               className="admin-detail__primary"
-              onClick={() => setReloadKey((v) => v + 1)}
+              onClick={handleCaseUpdated}
             >
               다시 시도
             </button>
@@ -170,17 +236,28 @@ export default function AdminCaseDetail() {
 
   if (!detail) return null;
 
+  // ========================================
+  // 사건 정보
+  // ========================================
+
   const urgency =
-    detail.urgencyLevel || detail.aiSuggestedUrgency;
+    detail.urgencyLevel ||
+    detail.aiSuggestedUrgency;
 
   const urgencySuggested =
     !detail.urgencyLevel &&
     Boolean(detail.aiSuggestedUrgency);
 
-  const sharedScope = detail.consent?.sharedScope || [];
+  const sharedScope =
+    detail.consent?.sharedScope || [];
+
+  // ========================================
+  // 화면
+  // ========================================
 
   return (
     <div className="admin-detail">
+      {/* 상단 사건 정보 */}
       <div className="admin-detail__top">
         <div>
           <button
@@ -199,49 +276,83 @@ export default function AdminCaseDetail() {
         </div>
 
         <div className="admin-detail__top-actions">
-          <span className={`admin-detail__status status-${detail.status?.toLowerCase()}`}>
-            {STATUS_LABELS[detail.status] || detail.status}
+          <span
+            className={`admin-detail__status status-${
+              detail.status?.toLowerCase()
+            }`}
+          >
+            {STATUS_LABELS[detail.status] ||
+              detail.status}
           </span>
 
           <button
             type="button"
             className="admin-detail__refresh"
-            onClick={() => setReloadKey((v) => v + 1)}
+            onClick={handleCaseUpdated}
           >
             새로고침
           </button>
         </div>
       </div>
 
-      {/* 기본 정보 */}
+      {/* ========================================
+          기본 정보 카드
+      ======================================== */}
+
       <section className="admin-detail__overview">
         <div>
           <span>노동자</span>
-          <strong>{detail.worker?.name || "확인 필요"}</strong>
-          <small>언어: {detail.worker?.language || "-"}</small>
+
+          <strong>
+            {detail.worker?.name || "확인 필요"}
+          </strong>
+
+          <small>
+            언어: {detail.worker?.language || "-"}
+          </small>
         </div>
 
         <div>
           <span>상담 우선순위</span>
+
           <strong>
             {URGENCY_LABELS[urgency] || "미분류"}
+
             {urgencySuggested && (
-              <small className="admin-detail__ai"> AI 제안</small>
+              <small className="admin-detail__ai">
+                {" "}
+                AI 제안
+              </small>
             )}
           </strong>
-          <small>최종 우선순위는 담당자가 검토합니다.</small>
+
+          <small>
+            최종 우선순위는 담당자가 검토합니다.
+          </small>
         </div>
 
         <div>
           <span>담당자</span>
-          <strong>{detail.assignee?.name || "미배정"}</strong>
+
+          <strong>
+            {detail.assignee?.name || "미배정"}
+          </strong>
+
           <small>상담기관 담당자</small>
         </div>
       </section>
 
+      {/* ========================================
+          왼쪽 사건 상세 / 오른쪽 관리
+      ======================================== */}
+
       <div className="admin-detail__grid">
+        {/* 왼쪽 상세 정보 */}
         <div className="admin-detail__main-column">
-          {/* AI 사건 요약 */}
+          {/* ========================================
+              AI 사건 요약
+          ======================================== */}
+
           <section className="admin-detail__card">
             <div className="admin-detail__card-header">
               <div>
@@ -261,7 +372,10 @@ export default function AdminCaseDetail() {
             )}
           </section>
 
-          {/* 임금 비교 */}
+          {/* ========================================
+              임금 비교
+          ======================================== */}
+
           <section className="admin-detail__card">
             <div className="admin-detail__card-header">
               <div>
@@ -275,6 +389,7 @@ export default function AdminCaseDetail() {
                 <div className="admin-detail__wages">
                   <div>
                     <span>예상 임금</span>
+
                     <strong>
                       {formatMoney(
                         detail.wageComparison.expectedAmount
@@ -284,6 +399,7 @@ export default function AdminCaseDetail() {
 
                   <div>
                     <span>실제 지급액</span>
+
                     <strong>
                       {formatMoney(
                         detail.wageComparison.actualAmount
@@ -293,6 +409,7 @@ export default function AdminCaseDetail() {
 
                   <div className="admin-detail__wage-difference">
                     <span>확인 필요 차이</span>
+
                     <strong>
                       {formatMoney(
                         detail.wageComparison.differenceAmount
@@ -322,7 +439,10 @@ export default function AdminCaseDetail() {
             )}
           </section>
 
-          {/* 근무 타임라인 */}
+          {/* ========================================
+              근무 타임라인
+          ======================================== */}
+
           <section className="admin-detail__card">
             <div className="admin-detail__card-header">
               <div>
@@ -349,44 +469,82 @@ export default function AdminCaseDetail() {
                         <th>확인 사항</th>
                       </tr>
                     </thead>
+
                     <tbody>
-                      {detail.timeline.map((record, index) => (
-                        <tr key={`${record.date}-${index}`}>
-                          <td>{record.date}</td>
-                          <td>{formatTime(record.clockInAt)}</td>
-                          <td>{formatTime(record.clockOutAt)}</td>
-                          <td>
-                            {record.breakMinutes == null
-                              ? "미입력"
-                              : `${record.breakMinutes}분`}
-                          </td>
-                          <td>
-                            {formatMinutes(record.workedMinutes)}
-                          </td>
-                          <td>
-                            {(record.flags || []).length
-                              ? record.flags.map(
-                                  (flag) =>
-                                    FLAG_LABELS[flag] || flag
-                                ).join(", ")
-                              : "정상"}
-                            {(record.edits || []).length > 0 && (
-                              <details>
-                                <summary>수정 이력</summary>
-                                {record.edits.map((edit, editIndex) => (
-                                  <p key={editIndex}>
-                                    {edit.field}: {edit.before ?? "-"}
-                                    {" → "}
-                                    {edit.after ?? "-"}
-                                    {" / "}
-                                    {edit.reason}
-                                  </p>
-                                ))}
-                              </details>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
+                      {detail.timeline.map(
+                        (record, index) => (
+                          <tr
+                            key={`${record.date}-${index}`}
+                          >
+                            <td>{record.date}</td>
+
+                            <td>
+                              {formatTime(
+                                record.clockInAt
+                              )}
+                            </td>
+
+                            <td>
+                              {formatTime(
+                                record.clockOutAt
+                              )}
+                            </td>
+
+                            <td>
+                              {record.breakMinutes == null
+                                ? "미입력"
+                                : `${record.breakMinutes}분`}
+                            </td>
+
+                            <td>
+                              {formatMinutes(
+                                record.workedMinutes
+                              )}
+                            </td>
+
+                            <td>
+                              {(record.flags || []).length
+                                ? record.flags
+                                    .map(
+                                      (flag) =>
+                                        FLAG_LABELS[flag] ||
+                                        flag
+                                    )
+                                    .join(", ")
+                                : "정상"}
+
+                              {(record.edits || []).length >
+                                0 && (
+                                <details>
+                                  <summary>
+                                    수정 이력
+                                  </summary>
+
+                                  {record.edits.map(
+                                    (
+                                      edit,
+                                      editIndex
+                                    ) => (
+                                      <p
+                                        key={editIndex}
+                                      >
+                                        {edit.field}:{" "}
+                                        {edit.before ??
+                                          "-"}
+                                        {" → "}
+                                        {edit.after ??
+                                          "-"}
+                                        {" / "}
+                                        {edit.reason}
+                                      </p>
+                                    )
+                                  )}
+                                </details>
+                              )}
+                            </td>
+                          </tr>
+                        )
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -398,7 +556,10 @@ export default function AdminCaseDetail() {
             )}
           </section>
 
-          {/* 근로계약서 */}
+          {/* ========================================
+              근로계약서
+          ======================================== */}
+
           <section className="admin-detail__card">
             <div className="admin-detail__card-header">
               <div>
@@ -410,24 +571,28 @@ export default function AdminCaseDetail() {
             {detail.contract ? (
               <div className="admin-detail__contract">
                 {detail.contract.terms &&
-                  Object.entries(detail.contract.terms).map(
-                    ([key, value]) => (
-                      <div key={key}>
-                        <span>{key}</span>
-                        <strong>
-                          {value == null
-                            ? "-"
-                            : typeof value === "object"
-                              ? JSON.stringify(value)
-                              : String(value)}
-                        </strong>
-                      </div>
-                    )
-                  )}
+                  Object.entries(
+                    detail.contract.terms
+                  ).map(([key, value]) => (
+                    <div key={key}>
+                      <span>{key}</span>
+
+                      <strong>
+                        {value == null
+                          ? "-"
+                          : typeof value === "object"
+                            ? JSON.stringify(value)
+                            : String(value)}
+                      </strong>
+                    </div>
+                  ))}
 
                 {(detail.contract.reviews || []).map(
                   (review, index) => (
-                    <p className="admin-detail__warning" key={index}>
+                    <p
+                      className="admin-detail__warning"
+                      key={index}
+                    >
                       {review.message}
                     </p>
                   )
@@ -440,7 +605,10 @@ export default function AdminCaseDetail() {
             )}
           </section>
 
-          {/* 공유 증거 */}
+          {/* ========================================
+              공유된 증거
+          ======================================== */}
+
           <section className="admin-detail__card">
             <div className="admin-detail__card-header">
               <div>
@@ -452,27 +620,35 @@ export default function AdminCaseDetail() {
             {Array.isArray(detail.evidences) &&
             detail.evidences.length > 0 ? (
               <div className="admin-detail__evidences">
-                {detail.evidences.map((evidence) => (
-                  <div key={evidence.id}>
-                    <div>
-                      <strong>{evidence.title}</strong>
-                      <span>
-                        {evidence.type} ·{" "}
-                        {formatDate(evidence.occurredAt, true)}
-                      </span>
-                    </div>
+                {detail.evidences.map(
+                  (evidence) => (
+                    <div key={evidence.id}>
+                      <div>
+                        <strong>
+                          {evidence.title}
+                        </strong>
 
-                    {evidence.fileUrl && (
-                      <a
-                        href={evidence.fileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        파일 열기
-                      </a>
-                    )}
-                  </div>
-                ))}
+                        <span>
+                          {evidence.type} ·{" "}
+                          {formatDate(
+                            evidence.occurredAt,
+                            true
+                          )}
+                        </span>
+                      </div>
+
+                      {evidence.fileUrl && (
+                        <a
+                          href={evidence.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          파일 열기
+                        </a>
+                      )}
+                    </div>
+                  )
+                )}
               </div>
             ) : (
               <p className="admin-detail__empty">
@@ -482,8 +658,12 @@ export default function AdminCaseDetail() {
           </section>
         </div>
 
-        {/* 오른쪽 사건 관리 정보 */}
+        {/* ========================================
+            오른쪽 관리자 영역
+        ======================================== */}
+
         <aside className="admin-detail__side-column">
+          {/* 정보 공유 동의 */}
           <section className="admin-detail__card">
             <div className="admin-detail__card-header">
               <div>
@@ -494,11 +674,16 @@ export default function AdminCaseDetail() {
 
             <div className="admin-detail__consent">
               <span>동의 일시</span>
+
               <strong>
-                {formatDate(detail.consent?.agreedAt, true)}
+                {formatDate(
+                  detail.consent?.agreedAt,
+                  true
+                )}
               </strong>
 
               <span>공유 범위</span>
+
               <div className="admin-detail__scopes">
                 {sharedScope.length ? (
                   sharedScope.map((scope) => (
@@ -513,6 +698,10 @@ export default function AdminCaseDetail() {
             </div>
           </section>
 
+          {/* ========================================
+              처리 현황
+          ======================================== */}
+
           <section className="admin-detail__card">
             <div className="admin-detail__card-header">
               <div>
@@ -524,50 +713,68 @@ export default function AdminCaseDetail() {
             <div className="admin-detail__processing">
               <div>
                 <span>현재 상태</span>
+
                 <strong>
-                  {STATUS_LABELS[detail.status] || detail.status}
+                  {STATUS_LABELS[detail.status] ||
+                    detail.status}
                 </strong>
               </div>
 
               <div>
                 <span>담당자</span>
+
                 <strong>
-                  {detail.assignee?.name || "미배정"}
+                  {detail.assignee?.name ||
+                    "미배정"}
                 </strong>
               </div>
 
               <div>
                 <span>추가 자료 요청</span>
+
                 <strong>
-                  {detail.infoRequests?.length ?? 0}건
+                  {detail.infoRequests?.length ?? 0}
+                  건
                 </strong>
               </div>
 
               <div>
                 <span>전문가 연계</span>
+
                 <strong>
-                  {detail.referrals?.length ?? 0}건
+                  {detail.referrals?.length ?? 0}
+                  건
                 </strong>
               </div>
             </div>
           </section>
 
-          <section className="admin-detail__card">
-            <div className="admin-detail__card-header">
-              <div>
-                <span>NEXT ACTION</span>
-                <h3>상담 처리</h3>
-              </div>
-            </div>
+          {/* ========================================
+              사건 처리 관리
+              담당자 배정 / 긴급도 확정 /
+              처리 상태 변경
+          ======================================== */}
 
-            <p className="admin-detail__side-description">
-              담당자 배정, 긴급도 확정, 처리 상태 변경,
-              추가 자료 요청 및 상담 결과 기록은
-              다음 개발 단계에서 연결합니다.
-            </p>
-          </section>
+          <AdminCaseActions
+            detail={detail}
+            onUpdated={handleCaseUpdated}
+          />
+
+          {/* ========================================
+              추가 자료 요청 - 새로 추가한 부분
+              요청 내역 / 요청 등록
+          ======================================== */}
+
+          <AdminInfoRequests
+            detail={detail}
+            onUpdated={handleCaseUpdated}
+          />
         </aside>
       </div>
+
+      {/* ========================================
+          법률 면책 문구
+      ======================================== */}
 
       <div className="admin-detail__disclaimer">
         {detail.disclaimer ||
