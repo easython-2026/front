@@ -13,17 +13,22 @@ function shiftMonth(value, direction) {
   return new Date(Date.UTC(year, month - 1 + direction, 1)).toISOString().slice(0, 7);
 }
 function extractRecords(response) {
-  const data = response?.data ?? response;
-
-  if (!Array.isArray(data?.days)) {
-    throw new Error("근무기록 응답 형식이 올바르지 않습니다.");
-  }
-
-  return data.days.map((item) => ({
-    ...item,
-    workDate: item.date,
-    recordId: item.recordId,
+  const data = unwrap(response);
+  if (!Array.isArray(data?.days)) return null;
+  return data.days.map((day) => ({
+    ...day,
+    workDate: day.date,
+    status: day.flags?.includes("EDITED") ? "EDITED" :
+      day.flags?.some((x) => x === "MISSING_CLOCK_OUT" || x === "NO_BREAK")
+        ? "ISSUE" : "NORMAL",
   }));
+}
+function mondayOfMonth(month) {
+  const [year, mm] = month.split("-").map(Number);
+  const date = new Date(Date.UTC(year, mm - 1, 1));
+  const weekday = date.getUTCDay();
+  date.setUTCDate(date.getUTCDate() - ((weekday + 6) % 7));
+  return date.toISOString().slice(0, 10);
 }
 export default function AttendanceHistory() {
   const [month, setMonth] = useState(localMonth);
@@ -35,8 +40,7 @@ export default function AttendanceHistory() {
   useEffect(() => {
     let active = true;
     setLoading(true); setError("");
-    const [year, monthNumber] = month.split("-").map(Number);
-    const query = mode === "month" ? { month, year, page: 1, size: 40 } : { year, month: monthNumber };
+    const query = mode === "month" ? { month } : { weekStart: mondayOfMonth(month) };
     const fn = mode === "month" ? getMonthlyAttendance : getWeeklyAttendance;
     fn(query).then((response) => {
       if (!active) return;

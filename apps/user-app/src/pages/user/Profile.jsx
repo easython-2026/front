@@ -42,8 +42,8 @@ function languageList(value) {
         v.name ??
         v.nativeName ??
         v.languageName ??
-      ""
-    ),
+        ""
+      ),
     }))
     .filter((v) => v.code && v.name);
 }
@@ -173,6 +173,7 @@ export default function Profile() {
   const [busy, setBusy] = useState(false);
   const [dialog, setDialog] = useState("");
   const [deleteText, setDeleteText] = useState("");
+  const [deletePassword, setDeletePassword] = useState("");
 
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -361,7 +362,7 @@ export default function Profile() {
   async function removeAccount() {
     if (
       busy ||
-      deleteText !== "탈퇴"
+      deleteText !== "탈퇴" || !deletePassword
     ) {
       return;
     }
@@ -378,7 +379,8 @@ export default function Profile() {
     setError("");
 
     try {
-      await deleteAccount();
+      await deleteAccount({ body: { password: deletePassword } });
+      setDeletePassword("");
 
       try {
         await signOut();
@@ -401,6 +403,7 @@ export default function Profile() {
     if (!busy) {
       setDialog("");
       setError("");
+      setDeletePassword("");
     }
   }
 
@@ -761,6 +764,18 @@ export default function Profile() {
             />
           </label>
 
+          <label className="pfs-confirm-label">
+            본인 확인 비밀번호
+            <input
+              type="password"
+              autoComplete="current-password"
+              value={deletePassword}
+              disabled={busy}
+              onChange={(event) => setDeletePassword(event.target.value)}
+              placeholder="현재 비밀번호를 입력해 주세요"
+            />
+          </label>
+
           {error && (
             <p
               className="pfs-notice pfs-error"
@@ -774,7 +789,7 @@ export default function Profile() {
             type="button"
             className="pfs-primary pfs-danger-btn"
             disabled={
-              busy || deleteText !== "탈퇴"
+              busy || deleteText !== "탈퇴" || !deletePassword
             }
             onClick={removeAccount}
           >

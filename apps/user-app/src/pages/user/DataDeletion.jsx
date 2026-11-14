@@ -45,7 +45,6 @@ const options = [
 
 export default function DataDeletion() {
   const [targets, setTargets] = useState([]);
-  const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
@@ -92,16 +91,8 @@ export default function DataDeletion() {
     setError("");
 
     try {
-      // 기존 프론트의 targets 필드 사용.
-      // 실제 서버 스키마 확인 필요.
-      const payload = { targets };
-
-      if (reason.trim()) {
-        payload.reason = reason.trim();
-      }
-
       const data = unwrap(
-        await requestDataDeletion(payload)
+        await requestDataDeletion({ targets })
       );
 
       setResult({
@@ -213,22 +204,6 @@ export default function DataDeletion() {
                   </label>
                 ))}
               </div>
-            </section>
-
-            {/* 요청 사유 */}
-            <section className="efx-card efx-stack">
-              <h2>추가 요청사항 (선택)</h2>
-
-              <textarea
-                rows="3"
-                value={reason}
-                disabled={busy}
-                onChange={(event) =>
-                  setReason(event.target.value)
-                }
-                maxLength={500}
-                placeholder="요청 사유 또는 참고사항을 입력해 주세요."
-              />
             </section>
 
             <button

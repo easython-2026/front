@@ -4,108 +4,145 @@ import {
   useRef,
   useState,
 } from "react";
-
 import { AuthContext } from "./auth-context";
 import {
   setAccessTokenProvider,
+  setTokenRefreshHandler,
   setUnauthorizedHandler,
 } from "../api/client";
-import { login as loginApi, logout as logoutApi } from "../api/auth";
+import {
+  login as loginApi,
+  logout as logoutApi,
+  refreshToken as refreshTokenApi,
+} from "../api/auth";
 
-const LOCAL_TOKEN_KEY = "easython.accessToken";
-const SESSION_TOKEN_KEY = "easython.sessionAccessToken";
+const LOCAL_ACCESS = "easython.accessToken";
+const SESSION_ACCESS = "easython.sessionAccessToken";
+const LOCAL_REFRESH = "easython.refreshToken";
+const SESSION_REFRESH = "easython.sessionRefreshToken";
 
-function readStoredToken() {
+function readStorage(localKey, sessionKey) {
   try {
-    return (
-      window.sessionStorage.getItem(SESSION_TOKEN_KEY) ||
-      window.localStorage.getItem(LOCAL_TOKEN_KEY) ||
-      null
-    );
+    return window.sessionStorage.getItem(sessionKey) ||
+      window.localStorage.getItem(localKey) || null;
   } catch {
     return null;
   }
 }
-
-function clearStoredToken() {
+function clearStorage() {
   try {
-    window.localStorage.removeItem(LOCAL_TOKEN_KEY);
-    window.sessionStorage.removeItem(SESSION_TOKEN_KEY);
+    [LOCAL_ACCESS, LOCAL_REFRESH].forEach((key) => window.localStorage.removeItem(key));
+    [SESSION_ACCESS, SESSION_REFRESH].forEach((key) => window.sessionStorage.removeItem(key));
   } catch {
-    // 브라우저 저장소가 차단된 상황에서도 메모리 상태는 정리한다.
+    // An unavailable browser storage must not block state cleanup.
   }
 }
-
-function extractAccessToken(response) {
-  const token = response?.accessToken ?? response?.data?.accessToken;
-  if (typeof token !== "string" || !token.trim()) {
-    throw new Error("로그인 응답에서 Access Token을 찾지 못했습니다.");
+function credentialsFrom(response) {
+  const data = response?.data ?? response;
+  if (!data?.accessToken || !data?.refreshToken) {
+    throw new Error("인증 응답에서 Access/Refresh Token을 찾지 못했습니다.");
   }
-  return token;
+  return {
+    access: data.accessToken,
+    refresh: data.refreshToken,
+  };
+}
+function rememberSession() {
+  try { return Boolean(window.localStorage.getItem(LOCAL_ACCESS)); }
+  catch { return false; }
+}
+function persistTokens(access, refresh, remember) {
+  clearStorage();
+  try {
+    const store = remember ? window.localStorage : window.sessionStorage;
+    store.setItem(remember ? LOCAL_ACCESS : SESSION_ACCESS, access);
+    store.setItem(remember ? LOCAL_REFRESH : SESSION_REFRESH, refresh);
+  } catch {
+    // Tokens will remain in-memory for the current tab.
+  }
 }
 
 export default function AuthProvider({ children }) {
-  const [accessToken, setAccessToken] = useState(readStoredToken);
+  const [accessToken, setAccessToken] = useState(() => readStorage(LOCAL_ACCESS, SESSION_ACCESS));
   const tokenRef = useRef(accessToken);
+  const refreshRef = useRef(readStorage(LOCAL_REFRESH, SESSION_REFRESH));
+  const refreshingRef = useRef(null);
 
   const clearSession = useCallback(() => {
     tokenRef.current = null;
-    clearStoredToken();
+    refreshRef.current = null;
+    clearStorage();
     setAccessToken(null);
   }, []);
 
-  // 자식 페이지의 일반 useEffect(API 요청)보다 먼저 토큰 제공자를 등록한다.
+  const refreshSession = useCallback(async (staleToken) => {
+    if (tokenRef.current && tokenRef.current !== staleToken) {
+      return tokenRef.current; // another request already rotated the token
+    }
+    if (!refreshRef.current) return null;
+    if (!refreshingRef.current) {
+      const oldAccess = tokenRef.current;
+      const oldRefresh = refreshRef.current;
+      const remember = rememberSession();
+      const job = (async () => {
+        const response = await refreshTokenApi(oldRefresh);
+        const next = credentialsFrom(response);
+        // Logging out while refresh is underway must not reinstate the session.
+        if (tokenRef.current !== oldAccess) return tokenRef.current;
+        tokenRef.current = next.access;
+        refreshRef.current = next.refresh;
+        persistTokens(next.access, next.refresh, remember);
+        setAccessToken(next.access);
+        return next.access;
+      })();
+      refreshingRef.current = job;
+      void job.finally(() => { if (refreshingRef.current === job) refreshingRef.current = null; }).catch(() => {});
+    }
+    try { return await refreshingRef.current; }
+    catch { return null; }
+  }, []);
+
   useLayoutEffect(() => {
     setAccessTokenProvider(() => tokenRef.current);
+    setTokenRefreshHandler(refreshSession);
     setUnauthorizedHandler((failedToken) => {
-      // 이전 요청의 401이 새 로그인 세션을 삭제하는 것을 방지한다.
-      if (tokenRef.current && tokenRef.current === failedToken) {
-        clearSession();
-      }
+      if (tokenRef.current && tokenRef.current === failedToken) clearSession();
     });
     return () => {
       setAccessTokenProvider(() => null);
+      setTokenRefreshHandler(null);
       setUnauthorizedHandler(null);
     };
-  }, [clearSession]);
+  }, [clearSession, refreshSession]);
 
   async function signIn(credentials, { remember = false } = {}) {
     const response = await loginApi(credentials);
-    const token = extractAccessToken(response);
-
-    tokenRef.current = token;
-    clearStoredToken();
-
-    try {
-      if (remember) {
-        window.localStorage.setItem(LOCAL_TOKEN_KEY, token);
-      } else {
-        window.sessionStorage.setItem(SESSION_TOKEN_KEY, token);
-      }
-    } catch {
-      // 저장소가 차단되어도 현재 탭에서는 로그인 유지.
-    }
-    setAccessToken(token);
+    const next = credentialsFrom(response);
+    tokenRef.current = next.access;
+    refreshRef.current = next.refresh;
+    persistTokens(next.access, next.refresh, remember);
+    setAccessToken(next.access);
     return response;
   }
 
   async function signOut() {
+    // Capture the current credentials before clearing local state.
+    const access = tokenRef.current;
+    const refresh = refreshRef.current;
     try {
-      if (tokenRef.current) await logoutApi();
+      if (access && refresh) await logoutApi(refresh, { token: access });
     } finally {
       clearSession();
     }
   }
 
   return (
-    <AuthContext.Provider
-      value={{
-        accessToken,
-        isAuthenticated: Boolean(accessToken),
-        signIn,
-        signOut,
-      }}
-    >
+    <AuthContext.Provider value={{
+      accessToken,
+      isAuthenticated: Boolean(accessToken),
+      signIn,
+      signOut,
+    }}>
       {children}
     </AuthContext.Provider>
   );

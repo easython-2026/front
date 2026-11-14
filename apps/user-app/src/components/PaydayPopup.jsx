@@ -27,6 +27,7 @@ export default function PaydayPopup() {
           "getList",
           {
             signal: controller.signal,
+            query: { popupOnly: true },
           }
         );
 

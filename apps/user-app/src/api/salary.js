@@ -1,4 +1,3 @@
-import { payrollOverviewFromComparisons } from "../utils/payrollComparisons";
 // 급여명세서 & 급여 비교
 
 
@@ -39,11 +38,29 @@ export const getSalaryComparisons = (query = {}, options = {}) =>
     ...options,
   });
 
-// 실제 목록 API를 사용한다.
-// 페이지/size 파라미터는 요청 스키마가 확인되지 않아 추가하지 않는다.
+// GET /payroll/comparisons is a one-month overview, NOT an array.
 export async function getSalaryOverviewForMonth(month, options = {}) {
-  const response = await getSalaryComparisons({}, options);
-  return payrollOverviewFromComparisons(response, month);
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
+    throw new Error("급여 조회 월 형식은 YYYY-MM이어야 합니다.");
+  }
+  const response = await getSalaryComparisons({ month }, options);
+  const data = response?.data ?? response;
+  if (!data || data.month !== month ||
+      !["NOT_SUBMITTED", "READY", "COMPARED"].includes(data.state)) {
+    throw new Error("월별 급여 비교 응답 형식이 올바르지 않습니다.");
+  }
+  return {
+    month: data.month,
+    status: data.state,
+    state: data.state,
+    statementId: data.statementId ?? null,
+    payday: data.payday ?? null,
+    comparison: data.comparison ? {
+      ...data.comparison,
+      comparisonId: data.comparison.id,
+      month: data.month,
+    } : null,
+  };
 }
 
 // 예상 임금 계산 및 지급액 비교

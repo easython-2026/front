@@ -7,15 +7,17 @@ export const signup = (data) =>
 export const login = (data) =>
   apiRequest("auth", "login", { body: data, token: null });
 
-export const logout = (options = {}) =>
-  apiRequest("auth", "logout", options);
+export const logout = (refreshTokenValue, options = {}) =>
+  apiRequest("auth", "logout", {
+    ...options,
+    body: { refreshToken: refreshTokenValue },
+  });
 
 // 리프레시 토큰 전달 방식(쿠키/본문)이 백엔드와 일치해야만 사용한다.
-export const refreshToken = (options = {}) =>
+export const refreshToken = (refreshTokenValue) =>
   apiRequest("auth", "refresh", {
-    ...options,
+    body: { refreshToken: refreshTokenValue },
     token: null,
-    credentials: options.credentials ?? "include",
   });
 
 export const checkEmail = (query) =>

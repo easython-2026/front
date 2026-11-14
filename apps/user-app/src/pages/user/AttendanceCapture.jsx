@@ -5,7 +5,8 @@ import useGeolocation from "../../hooks/useGeolocation";
 import { checkLocation, clockIn, clockOut } from "../../api/attendance";
 import { FeatureButton, FeatureIcon, FeatureNotice, displayKst, errorText, unwrap } from "../../components/WorkerFeatureUI";
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const ALLOWED_PHOTO_TYPES = ["image/jpeg", "image/png"];
 
 export default function AttendanceCapture() {
   const { type } = useParams();
@@ -18,6 +19,7 @@ export default function AttendanceCapture() {
   const [gps, setGps] = useState("checking");
   const [verificationToken, setVerificationToken] = useState("");
   const [gpsAccuracy, setGpsAccuracy] = useState(null);
+  const [verifiedExpiresAt, setVerifiedExpiresAt] = useState(null);
   const [photo, setPhoto] = useState(null);
   const [preview, setPreview] = useState("");
   const [cameraError, setCameraError] = useState("");
@@ -48,23 +50,29 @@ export default function AttendanceCapture() {
     setGps("checking");
     setError("");
     setVerificationToken("");
+    setVerifiedExpiresAt(null);
     clearPhoto();
     try {
       const coords = await getCurrentLocation();
       setGpsAccuracy(coords.accuracy);
-      // 이 요청 필드는 Figma 프로토타입의 action과 브라우저 GPS 좌표를 사용합니다.
-      // 서버가 사용하는 필드명이 다르다면 checkLocation()의 body만 API 명세에 맞춰 조정해야 합니다.
-      const result = unwrap(
-        await checkLocation({
-          type: action,
-          latitude: coords.latitude,
-          longitude: coords.longitude,
-          accuracyMeters: coords.accuracy,
-        })
-      );
-      if (result?.verified !== true || !result?.verificationToken) {
-        throw new Error("서버에서 근무장소 인증 완료 토큰을 받지 못했습니다.");
+      const result = unwrap(await checkLocation({
+        type: action,
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+        accuracyMeters: coords.accuracy,
+      }));
+      if (result?.verified === false) {
+        const reasons = {
+          OUT_OF_RANGE: "등록된 근무장소의 인증 반경 밖에 있습니다.",
+          LOW_ACCURACY: "GPS 위치 정확도가 낮습니다. 다시 시도해 주세요.",
+          NO_WORKPLACE: "먼저 근무장소를 등록해 주세요.",
+        };
+        throw new Error(reasons[result.failReason] || "GPS 위치 인증에 실패했습니다.");
       }
+      if (result?.verified !== true || !result?.verificationToken) {
+        throw new Error("서버에서 근무장소 인증 토큰을 받지 못했습니다.");
+      }
+      setVerifiedExpiresAt(result.expiresAt ?? null);
       setVerificationToken(result.verificationToken);
       setGps("success");
     } catch (e) {
@@ -111,8 +119,8 @@ export default function AttendanceCapture() {
 
   function usePhoto(file) {
     if (!file) return;
-    if (!file.type.startsWith("image/") || file.size > MAX_FILE_SIZE) {
-      setError("10MB 이하의 이미지 파일만 촬영·선택할 수 있습니다.");
+    if (!ALLOWED_PHOTO_TYPES.includes(file.type) || file.size > MAX_FILE_SIZE) {
+      setError("5MB 이하의 JPG 또는 PNG 이미지만 사용할 수 있습니다.");
       return;
     }
     if (previewRef.current) URL.revokeObjectURL(previewRef.current);
@@ -143,22 +151,28 @@ export default function AttendanceCapture() {
 
   async function save() {
     if (gps !== "success" || !verificationToken || !photo || saving) return;
+    if (verifiedExpiresAt && new Date(verifiedExpiresAt).getTime() <= Date.now()) {
+      setError("GPS 인증 시간이 만료되었습니다. 다시 위치 인증해 주세요.");
+      setGps("failed");
+      setVerificationToken("");
+      return;
+    }
     setSaving(true);
     setError("");
     try {
+      // Photo capture should be accompanied by its own current location sample.
+      // Do not reuse old coordinates if the location permission was revoked.
+      const coords = await getCurrentLocation();
+      if (!coords || !Number.isFinite(coords.accuracy)) {
+        throw new Error("촬영 시점의 위치 정보가 필요합니다.");
+      }
       const form = new FormData();
       form.append("verificationToken", verificationToken);
-form.append("photo", photo, photo.name);
-form.append("latitude", String(coords.latitude));
-form.append("longitude", String(coords.longitude));
-form.append(
-  "accuracyMeters",
-  String(coords.accuracy)
-);
-form.append(
-  "clientCapturedAt",
-  new Date().toISOString()
-);
+      form.append("photo", photo, photo.name);
+      form.append("latitude", String(coords.latitude));
+      form.append("longitude", String(coords.longitude));
+      form.append("accuracyMeters", String(coords.accuracy));
+      form.append("clientCapturedAt", new Date().toISOString());
       const result = unwrap(await (isIn ? clockIn(form) : clockOut(form)));
       setReceipt(result ?? {});
       releaseCamera();
@@ -200,7 +214,7 @@ form.append(
     {cameraError && gps === "success" && !photo && <p className="ef-camera-hint">{cameraError}</p>}
     <div className="ef-camera-controls">
       {(gps === "failed" || gps === "denied") && <FeatureButton variant="secondary" disabled={locating} onClick={verifyGps}><FeatureIcon name="refresh"/> GPS 재인증</FeatureButton>}
-      <input ref={fileInputRef} className="ef-visually-hidden" type="file" accept="image/*" capture="environment" onChange={(e) => { usePhoto(e.target.files?.[0]); e.target.value = ""; }}/>
+      <input ref={fileInputRef} className="ef-visually-hidden" type="file" accept="image/jpeg,image/png" capture="environment" onChange={(e) => { usePhoto(e.target.files?.[0]); e.target.value = ""; }}/>
       <button type="button" aria-label="사진 촬영" className={`ef-shutter ${gps === "success" ? "enabled" : ""}`} disabled={gps !== "success" || saving || Boolean(photo)} onClick={takePhoto}><span/></button>
       <small>{gps === "success" ? `${title} 사진 촬영` : "GPS 인증 전에는 촬영할 수 없어요"}</small>
     </div>

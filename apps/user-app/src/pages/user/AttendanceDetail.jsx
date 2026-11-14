@@ -77,17 +77,30 @@ function readPhotos(record) {
   return [
     {
       title: "출근 인증 사진",
-      src: record.clockInPhotoUrl ?? record.clockIn?.photoUrl ??
-        record.evidence?.clockInPhotoUrl,
-      verified: record.clockInGpsVerified ?? record.clockIn?.gpsVerified,
+      src: record.clockIn?.photo?.url ?? null,
+      verified: record.clockIn?.gps?.verified ?? null,
     },
     {
       title: "퇴근 인증 사진",
-      src: record.clockOutPhotoUrl ?? record.clockOut?.photoUrl ??
-        record.evidence?.clockOutPhotoUrl,
-      verified: record.clockOutGpsVerified ?? record.clockOut?.gpsVerified,
+      src: record.clockOut?.photo?.url ?? null,
+      verified: record.clockOut?.gps?.verified ?? null,
     },
   ];
+}
+
+function normalizeRecord(item) {
+  const current = item.current ?? {};
+  return {
+    ...item,
+    clockInAt: current.clockInAt ?? item.clockIn?.at ?? null,
+    clockOutAt: current.clockOutAt ?? item.clockOut?.at ?? null,
+    breakMinutes: current.breakMinutes ?? null,
+    workedMinutes: current.workedMinutes ?? null,
+    revisions: Array.isArray(item.history) ? item.history : [],
+    originalRecord: item.original ?? null,
+    gpsVerified: item.clockIn?.gps?.verified === true &&
+      item.clockOut?.gps?.verified === true,
+  };
 }
 
 function toForm(item) {
@@ -121,8 +134,9 @@ export default function AttendanceDetail() {
       if (!item || typeof item !== "object" || Array.isArray(item)) {
         throw new Error("근무기록 응답이 비어 있습니다.");
       }
-      setRecord(item);
-      setForm(toForm(item));
+      const normalized = normalizeRecord(item);
+      setRecord(normalized);
+      setForm(toForm(normalized));
     } catch (err) {
       setError(errorText(err));
       setRecord(null);
@@ -211,8 +225,8 @@ export default function AttendanceDetail() {
       }
       if (breakChanged) {
         await updateBreakTime(recordId, {
-  breakMinutes: breakNumber,
-});
+          breakMinutes: breakNumber,
+        });
       }
       setEditing(false);
       await load();
@@ -316,8 +330,8 @@ export default function AttendanceDetail() {
                     <i />
                     <div>
                       <b>{revision.title ?? `수정 이력 ${index + 1}`}</b>
-                      <span>{revision.description ?? revision.reason ?? "서버 기록을 확인해 주세요."}</span>
-                      <small>{displayKst(revision.updatedAt ?? revision.createdAt, {
+                      <span>{revision.description ?? (`${revision.field ?? "수정"}: ${revision.before ?? "미입력"} → ${revision.after ?? "미입력"} · ${revision.reason ?? "사유 없음"}`)}</span>
+                      <small>{displayKst(revision.editedAt ?? revision.updatedAt ?? revision.createdAt, {
                         dateStyle: "medium",
                         timeStyle: "short",
                       })}</small>

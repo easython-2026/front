@@ -5,6 +5,7 @@ const BASE_URL = String(import.meta.env.VITE_API_BASE_URL || "")
 
 let accessTokenProvider = () => null;
 let unauthorizedHandler = null;
+let tokenRefreshHandler = null;
 
 export function setAccessTokenProvider(provider) {
   if (typeof provider !== "function") {
@@ -13,8 +14,14 @@ export function setAccessTokenProvider(provider) {
   accessTokenProvider = provider;
 }
 
-// 만료된 토큰을 화면 인증 상태와 동기화하기 위한 콜백.
-// 재발급 API 계약이 확정되기 전까지 임의의 refresh 요청은 수행하지 않는다.
+// The authentication provider supplies an async, single-flight refresh function.
+export function setTokenRefreshHandler(handler) {
+  if (handler !== null && typeof handler !== "function") {
+    throw new TypeError("Refresh handler must be a function or null.");
+  }
+  tokenRefreshHandler = handler;
+}
+
 export function setUnauthorizedHandler(handler) {
   if (handler !== null && typeof handler !== "function") {
     throw new TypeError("Unauthorized handler must be a function or null.");
@@ -140,17 +147,40 @@ export async function apiRequest(
   }
 
   let response;
+  const requestInit = {
+    method: endpoint.method,
+    headers: requestHeaders,
+    body: requestBody,
+    credentials,
+    signal,
+  };
   try {
-    response = await fetch(url, {
-      method: endpoint.method,
-      headers: requestHeaders,
-      body: requestBody,
-      credentials,
-      signal,
-    });
+    response = await fetch(url, requestInit);
   } catch (error) {
     if (error?.name === "AbortError") throw error;
     throw new ApiError("서버에 연결할 수 없습니다.", 0, error);
+  }
+
+  // Only protected APIs are retried, and only once, after rotating tokens.
+  // No refresh attempt for public authentication routes.
+  let authenticatedToken = accessToken;
+  if (response.status === 401 && accessToken && group !== "auth" && tokenRefreshHandler) {
+    let replacement = null;
+    try {
+      replacement = await tokenRefreshHandler(accessToken);
+    } catch {
+      replacement = null;
+    }
+    if (replacement && replacement !== accessToken) {
+      authenticatedToken = replacement;
+      requestHeaders.set("Authorization", `Bearer ${replacement}`);
+      try {
+        response = await fetch(url, requestInit);
+      } catch (error) {
+        if (error?.name === "AbortError") throw error;
+        throw new ApiError("서버에 연결할 수 없습니다.", 0, error);
+      }
+    }
   }
 
   if (!response.ok) {
@@ -165,9 +195,9 @@ export async function apiRequest(
 
     // 로그인 실패(401)는 기존 세션을 강제로 제거하는 근거가 아니다.
     // 보호 API 401에서만, 요청할 때 사용한 토큰을 넘겨 경쟁 상황을 방지한다.
-    if (response.status === 401 && accessToken && group !== "auth") {
+    if (response.status === 401 && authenticatedToken && group !== "auth") {
       try {
-        unauthorizedHandler?.(accessToken);
+        unauthorizedHandler?.(authenticatedToken);
       } catch {
         // 오류 콜백 실패가 원래 API 오류를 가리지 않게 한다.
       }

@@ -4,17 +4,16 @@ import { Link, useNavigate } from "react-router";
 import { uploadContract } from "../../api/contract";
 import "../../styles/contract-upload-figma.css";
 
-const MAX_FILE_SIZE = 20 * 1024 * 1024;
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 const ACCEPTED_TYPES = [
   "application/pdf",
   "image/jpeg",
   "image/png",
-  "image/webp",
 ];
 
 const ACCEPTED_EXTENSIONS =
-  ".pdf,.jpg,.jpeg,.png,.webp";
+  ".pdf,.jpg,.jpeg,.png";
 
 // 기존 API 명세의 multipart 파일 필드명 확인 필요
 const UPLOAD_FIELD = "file";
@@ -188,14 +187,14 @@ export default function ContractUpload() {
 
     if (!ACCEPTED_TYPES.includes(file.type)) {
       setFileError(
-        "PDF, JPG, PNG, WEBP 파일만 등록할 수 있습니다."
+        "PDF, JPG, PNG 파일만 등록할 수 있습니다."
       );
       return;
     }
 
     if (file.size > MAX_FILE_SIZE) {
       setFileError(
-        "계약서 파일 크기는 20MB 이하여야 합니다."
+        "계약서 파일 크기는 10MB 이하여야 합니다."
       );
       return;
     }

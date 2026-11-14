@@ -86,32 +86,20 @@ function listOf(response, key) {
   return [];
 }
 
-// 급여 비교 목록 응답 검사
-function comparisonList(response) {
+// Monthly comparison endpoint returns ONE overview, not a comparisons array.
+function mismatchOption(response) {
   const data = unwrap(response);
-
-  if (Array.isArray(data)) {
-    return data;
-  }
-
-  const candidates = [
-    data?.comparisons,
-    data?.content,
-    data?.items,
-    data?.results,
-  ];
-
-  const found = candidates.find(
-    (value) => Array.isArray(value)
-  );
-
-  if (found) {
-    return found;
-  }
-
-  throw new Error(
-    "급여 비교 목록의 응답 형식을 확인할 수 없습니다. 서버 Response 데이터를 확인해 주세요."
-  );
+  if (data?.state !== "COMPARED" ||
+      data.comparison?.status !== "MISMATCH" ||
+      !data.comparison?.id) return [];
+  return [{ ...data.comparison, month: data.month }];
+}
+function localMonth() {
+  const fields = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul", year: "numeric", month: "2-digit",
+  }).formatToParts(new Date());
+  const value = (key) => fields.find((f) => f.type === key)?.value;
+  return `${value("year")}-${value("month")}`;
 }
 
 // 실제 비교 ID 확인
@@ -258,6 +246,7 @@ export default function PetitionCreate() {
   // 급여 비교 화면에서 직접 전달한 ID
   const fromUrl =
     searchParams.get("comparisonId") ?? "";
+  const [month, setMonth] = useState(() => searchParams.get("month") || localMonth());
 
   /* ==========================================
      상태 관리
@@ -350,92 +339,42 @@ export default function PetitionCreate() {
   }, [fromUrl]);
 
   /* ==========================================
-     1. 불일치 급여 비교 목록 조회
-
-     중요 수정:
-     기존 page=1, size=50 제거
+     GET /payroll/comparisons?month=YYYY-MM
+     Backend returns an overview object, never a list.
   ========================================== */
-
   useEffect(() => {
-    // 급여 비교 화면에서 ID를 전달했다면
-    // 목록 조회 없이 상세를 직접 확인
-    if (fromUrl) {
-      return;
-    }
-
     let active = true;
-
     async function loadComparisons() {
       setListLoading(true);
       setListError("");
-
       try {
-        // =================================
-        // 수정된 API 호출
-        // 불필요한 query 파라미터 제거
-        // =================================
-
-        const response = await apiRequest(
-          "salary",
-          "getComparisons"
-        );
-
+        const response = await apiRequest("salary", "getComparisons", {
+          query: { month },
+        });
         if (!active) return;
-
-        const allComparisons =
-          comparisonList(response);
-
-        // 서버에서 확인된 MISMATCH 결과만 표시
-        const options =
-          allComparisons.filter(
-            (item) =>
-              isMismatch(item) &&
-              getComparisonId(item) !== null
-          );
-
+        const overview = unwrap(response);
+        if (overview?.month !== month || !overview?.state) {
+          throw new Error("월별 급여 비교 응답 구조가 올바르지 않습니다.");
+        }
+        const options = mismatchOption(response);
         setCandidateList(options);
-
-        // 비교 결과가 하나뿐이면 자동 선택
         setSelected((previous) => {
-          if (
-            previous &&
-            options.some(
-              (item) =>
-                getComparisonId(item) ===
-                previous
-            )
-          ) {
-            return previous;
-          }
-
-          if (options.length === 1) {
-            return getComparisonId(
-              options[0]
-            );
-          }
-
-          return "";
+          if (options.some((item) => getComparisonId(item) === previous)) return previous;
+          // Preserve a deep-linked comparison until its detailed response arrives.
+          if (fromUrl && previous === fromUrl) return previous;
+          return options.length === 1 ? getComparisonId(options[0]) : "";
         });
       } catch (error) {
         if (!active) return;
-
         setCandidateList([]);
-        setListError(
-          humanError(error)
-        );
+        setListError(humanError(error));
       } finally {
-        if (active) {
-          setListLoading(false);
-        }
+        if (active) setListLoading(false);
       }
     }
-
     loadComparisons();
-
-    return () => {
-      active = false;
-    };
-  }, [fromUrl, listReload]);
+    return () => { active = false; };
+  }, [month, fromUrl, listReload]);
 
   /* ==========================================
      2. 선택한 급여 비교 상세 조회
@@ -486,8 +425,12 @@ export default function PetitionCreate() {
         }
 
         setComparison(comp);
+        if (fromUrl && selected === fromUrl &&
+            comp.month && comp.month !== month) {
+          setMonth(comp.month);
+        }
 
-        const month = comp?.month;
+        const comparisonMonth = comp?.month;
 
         /* =================================
            3. 관련 자료 병렬 조회
@@ -504,12 +447,12 @@ export default function PetitionCreate() {
           ),
 
           // 월별 근무기록
-          month
+          comparisonMonth
             ? apiRequest(
                 "report",
                 "getMonthly",
                 {
-                  query: { month },
+                  query: { month: comparisonMonth },
                 }
               )
             : Promise.reject(
@@ -588,7 +531,7 @@ export default function PetitionCreate() {
     return () => {
       active = false;
     };
-  }, [selected]);
+  }, [selected, fromUrl, month]);
 
   /* ==========================================
      4. 화면에 표시할 데이터
@@ -821,9 +764,22 @@ export default function PetitionCreate() {
             급여 비교 결과 선택 카드
         ==================================== */}
 
-        {!fromUrl && (
-          <section className="pf-card pf-field">
-
+        <section className="pf-card pf-field">
+            <label htmlFor="pf-comparison-month">급여 비교 조회 월</label>
+            <input
+              id="pf-comparison-month"
+              type="month"
+              value={month}
+              disabled={listLoading || creating}
+              onChange={(event) => {
+                if (!event.target.value) return;
+                setSelected("");
+                setComparison(null);
+                setMonth(event.target.value);
+                setDetailError("");
+                setCreateError("");
+              }}
+            />
             <label htmlFor="pf-choose-comparison">
               진정서 기준 임금 비교
             </label>
@@ -847,6 +803,13 @@ export default function PetitionCreate() {
                   : "불일치 비교 결과 선택"}
               </option>
 
+              {selected && !candidateList.some((item) => getComparisonId(item) === selected) &&
+                comparison?.status === "MISMATCH" && (
+                  <option value={selected}>
+                    {comparison.month ?? "월 미확인"} · 차이 {money(comparison.differenceAmount)}
+                  </option>
+                )}
+
               {candidateList.map(
                 (item) => {
                   const id =
@@ -869,26 +832,6 @@ export default function PetitionCreate() {
               )}
             </select>
 
-            <label htmlFor="pf-direct-comparison-id">
-              급여 비교 ID로 직접 찾기 (선택)
-            </label>
-            <input
-              id="pf-direct-comparison-id"
-              type="text"
-              value={selected}
-              placeholder="급여 비교 상세 화면의 ID 입력"
-              onChange={(event) => {
-                setSelected(event.target.value.trim());
-                setDetailError("");
-                setCreateError("");
-              }}
-              disabled={listLoading || creating}
-            />
-            <p className="pf-muted">
-              불일치 결과가 목록에 보이지 않더라도 비교 ID를 알고 있다면
-              직접 입력할 수 있어요. 서버 상세 조회로 불일치 상태를 다시 확인합니다.
-            </p>
-
             {/* 급여 비교 목록 조회 오류 */}
             {listError && (
               <div
@@ -904,7 +847,7 @@ export default function PetitionCreate() {
               !listError &&
               candidateList.length === 0 && (
                 <p className="pf-muted">
-                  선택할 불일치 비교 결과가
+                  해당 월에 진정서에 사용할 불일치 임금 비교 결과가
                   없습니다.{" "}
 
                   <Link to="/salary">
@@ -929,7 +872,6 @@ export default function PetitionCreate() {
                 : "급여 비교 결과 다시 불러오기"}
             </button>
           </section>
-        )}
 
         {/* 비교 상세 조회 로딩 */}
         {detailLoading && (

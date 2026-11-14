@@ -237,25 +237,18 @@ export async function saveSettingsSection(
         )
       : validateBusiness(form);
 
-  // 3. 다른 영역 데이터도 유지하여 전송
+  // 3. Preserve the other section, but never echo server-only response fields.
   const body = {};
-
   if (before.workplace) {
-    body.workplace = {
-      ...before.workplace,
-    };
+    const { name, address, latitude, longitude, radiusMeters } = before.workplace;
+    body.workplace = { name, address, latitude, longitude };
+    if (radiusMeters != null) body.workplace.radiusMeters = radiusMeters;
   }
-
   if (before.business) {
-    body.business = {
-      ...before.business,
-    };
+    const { name, address, ownerName } = before.business;
+    body.business = { name, address, ownerName };
   }
-
-  body[section] = {
-    ...(before[section] ?? {}),
-    ...edited,
-  };
+  body[section] = edited;
 
   // 4. 기존 PUT API 호출
   await updateWorkplace(body);
