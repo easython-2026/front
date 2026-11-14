@@ -45,6 +45,8 @@ function parseLanguages(response) {
       item?.languageCode;
 
     const name =
+      item?.nameNative ??
+      item?.nameKo ??
       item?.name ??
       item?.nativeName ??
       item?.languageName;

@@ -37,11 +37,13 @@ function languageList(value) {
         v.code ?? v.languageCode ?? ""
       ),
       name: String(
+        v.nameNative ??
+        v.nameKo ??
         v.name ??
         v.nativeName ??
         v.languageName ??
-        ""
-      ),
+      ""
+    ),
     }))
     .filter((v) => v.code && v.name);
 }

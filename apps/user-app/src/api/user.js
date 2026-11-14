@@ -49,4 +49,6 @@ export const requestDataDeletion = (data) =>
 
 // 지원 언어 목록
 export const getLanguages = () =>
-  apiRequest("user", "getLanguages");
+  apiRequest("user", "getLanguages", {
+    token: null,
+  });
