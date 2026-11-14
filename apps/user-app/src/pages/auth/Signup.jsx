@@ -1,37 +1,15 @@
 
-import {
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router";
+import { checkEmail, signup } from "../../api/auth";
+import { getLanguages } from "../../api/user";
+import { AuthButton, AuthFrame, AuthMessage } from "./AuthUI";
 
-import {
-  Link,
-  useNavigate,
-} from "react-router";
-
-import {
-  checkEmail,
-  signup,
-} from "../../api/auth";
-
-import {
-  getLanguages,
-} from "../../api/user";
-
-import {
-  AuthButton,
-  AuthFrame,
-  AuthMessage,
-} from "./AuthUI";
-
-/* 언어 목록 응답 변환 */
 function parseLanguages(response) {
-  const data = response?.data ?? response;
-
-  const items = Array.isArray(data)
-    ? data
-    : data?.languages;
+  const items =
+    response?.data?.languages ??
+    response?.languages ??
+    response;
 
   if (!Array.isArray(items)) {
     throw new Error(
@@ -39,36 +17,26 @@ function parseLanguages(response) {
     );
   }
 
-  return items.map((item) => {
-    const code =
-      item?.code ??
-      item?.languageCode;
-
-    const name =
-      item?.nameNative ??
-      item?.nameKo ??
-      item?.name ??
-      item?.nativeName ??
-      item?.languageName;
-
-    if (!code || !name) {
-      throw new Error(
-        "지원 언어 코드 또는 이름이 없습니다."
-      );
-    }
-
-    return {
-      code: String(code),
-      name: String(name),
-    };
-  });
+  return items
+    .map((item) => ({
+      code: String(
+        item.code ?? item.languageCode ?? ""
+      ),
+      name: String(
+        item.nameNative ??
+        item.nameKo ??
+        item.name ??
+        item.nativeName ??
+        ""
+      ),
+    }))
+    .filter((item) => item.code && item.name);
 }
 
-/* 이메일 중복 확인 응답 */
 function parseEmailAvailable(response) {
   const available =
-    response?.available ??
-    response?.data?.available;
+    response?.data?.available ??
+    response?.available;
 
   if (typeof available !== "boolean") {
     throw new Error(
@@ -85,67 +53,52 @@ const initialForm = {
   name: "",
   password: "",
   passwordConfirm: "",
-  agreeTerms: false,
   agreePrivacy: false,
-  agreeLocationPhoto: false,
+  agreeLocation: false,
+  agreeCamera: false,
+  agreedAt: "",
 };
 
 export default function Signup() {
   const navigate = useNavigate();
 
-  const [form, setForm] =
-    useState(initialForm);
-
-  const [languages, setLanguages] =
-    useState([]);
-
+  const [form, setForm] = useState(initialForm);
+  const [languages, setLanguages] = useState([]);
   const [languagesLoading, setLanguagesLoading] =
     useState(true);
 
   const [emailAvailable, setEmailAvailable] =
     useState(null);
-
   const [emailChecking, setEmailChecking] =
     useState(false);
 
-  const [loading, setLoading] =
-    useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  const [error, setError] =
-    useState("");
-
-  const [success, setSuccess] =
-    useState("");
-
-  // 이메일 확인 결과 관리
   const checkedEmailRef = useRef(null);
   const emailCheckSeq = useRef(0);
 
-  /* 지원 언어 불러오기 */
+  // 지원 언어 목록 불러오기
   useEffect(() => {
     let active = true;
 
     getLanguages()
-      .then((result) => {
+      .then((response) => {
         if (active) {
-          setLanguages(
-            parseLanguages(result)
-          );
+          setLanguages(parseLanguages(response));
         }
       })
       .catch((err) => {
         if (active) {
           setError(
-            err instanceof Error
-              ? err.message
-              : "언어 목록을 불러오지 못했습니다."
+            err?.message ||
+            "언어 목록을 불러오지 못했습니다."
           );
         }
       })
       .finally(() => {
-        if (active) {
-          setLanguagesLoading(false);
-        }
+        if (active) setLanguagesLoading(false);
       });
 
     return () => {
@@ -153,102 +106,106 @@ export default function Signup() {
     };
   }, []);
 
-  /* 입력값 변경 */
+  // 입력값 변경
   function change(name, value) {
-    setForm((previous) => ({
-      ...previous,
+    setForm((prev) => ({
+      ...prev,
       [name]: value,
+      ...(
+        (name === "agreeLocation" ||
+         name === "agreeCamera") &&
+        prev.agreePrivacy
+          ? { agreedAt: new Date().toISOString() }
+          : {}
+      ),
     }));
 
     setError("");
     setSuccess("");
 
-    // 이메일을 수정하면 중복 확인 무효화
     if (name === "email") {
       emailCheckSeq.current += 1;
       checkedEmailRef.current = null;
-
       setEmailAvailable(null);
       setEmailChecking(false);
     }
   }
 
-  /* 이메일 중복 확인 */
+  // 필수 개인정보 동의 및 동의 시각
+  function changePrivacy(checked) {
+    setForm((prev) => ({
+      ...prev,
+      agreePrivacy: checked,
+      agreedAt: checked
+        ? new Date().toISOString()
+        : "",
+    }));
+
+    setError("");
+    setSuccess("");
+  }
+
+  // 이메일 중복 확인
   async function verifyEmail() {
     const email = form.email.trim();
 
-    if (
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-    ) {
-      setError(
-        "올바른 이메일 주소를 입력해 주세요."
-      );
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError("올바른 이메일 주소를 입력해 주세요.");
       return;
     }
 
-    const id = ++emailCheckSeq.current;
-
-    setEmailChecking(true);
-    setEmailAvailable(null);
+    const requestId = ++emailCheckSeq.current;
 
     checkedEmailRef.current = null;
-
+    setEmailAvailable(null);
+    setEmailChecking(true);
     setError("");
     setSuccess("");
 
     try {
-      const result = await checkEmail({
-        email,
-      });
+      const response = await checkEmail({ email });
+      const available = parseEmailAvailable(response);
 
-      if (emailCheckSeq.current !== id) {
+      if (requestId !== emailCheckSeq.current) {
         return;
       }
-
-      const available =
-        parseEmailAvailable(result);
 
       setEmailAvailable(available);
 
       if (available) {
         checkedEmailRef.current = email;
-
-        setSuccess(
-          "사용할 수 있는 이메일입니다."
-        );
+        setSuccess("사용할 수 있는 이메일입니다.");
       } else {
-        setError(
-          "이미 사용 중인 이메일입니다."
-        );
+        setError("이미 사용 중인 이메일입니다.");
       }
     } catch (err) {
-      if (emailCheckSeq.current !== id) {
-        return;
+      if (requestId === emailCheckSeq.current) {
+        setError(
+          err?.message ||
+          "이메일 중복 확인에 실패했습니다."
+        );
       }
-
-      setError(
-        err instanceof Error
-          ? err.message
-          : "이메일 중복 확인에 실패했습니다."
-      );
     } finally {
-      if (emailCheckSeq.current === id) {
+      if (requestId === emailCheckSeq.current) {
         setEmailChecking(false);
       }
     }
   }
 
-  /* 회원가입 검증 */
+  // 회원가입 입력값 검증
   function validate() {
     const email = form.email.trim();
 
-    if (!form.languageCode) {
+    if (
+      !form.languageCode ||
+      !languages.some(
+        (item) => item.code === form.languageCode
+      )
+    ) {
       return "기본 사용 언어를 선택해 주세요.";
     }
 
-    if (
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-    ) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return "이메일 형식을 확인해 주세요.";
     }
 
@@ -271,23 +228,18 @@ export default function Signup() {
       return "비밀번호는 8자 이상이며 영문과 숫자를 포함해야 합니다.";
     }
 
-    if (
-      form.password !== form.passwordConfirm
-    ) {
+    if (form.password !== form.passwordConfirm) {
       return "비밀번호가 일치하지 않습니다.";
     }
 
-    if (
-      !form.agreeTerms ||
-      !form.agreePrivacy
-    ) {
-      return "필수 약관에 동의해 주세요.";
+    if (!form.agreePrivacy || !form.agreedAt) {
+      return "필수 개인정보 처리 동의가 필요합니다.";
     }
 
     return null;
   }
 
-  /* 회원가입 API 호출 */
+  // 회원가입 API 호출
   async function handleSubmit(event) {
     event.preventDefault();
 
@@ -307,35 +259,32 @@ export default function Signup() {
     try {
       const email = form.email.trim();
 
-      // 가입 직전 이메일 중복 재확인
-      const recheck =
-        parseEmailAvailable(
-          await checkEmail({ email })
-        );
+      const available = parseEmailAvailable(
+        await checkEmail({ email })
+      );
 
-      if (!recheck) {
+      if (!available) {
         checkedEmailRef.current = null;
         setEmailAvailable(false);
-
-        setError(
-          "이미 사용 중인 이메일입니다."
-        );
+        setError("이미 사용 중인 이메일입니다.");
         return;
       }
 
-      // 기존 user-app 회원가입 API 형식 유지
+      // 백엔드 명세에 맞춘 회원가입 요청
       await signup({
         email,
         password: form.password,
         name: form.name.trim(),
-        languageCode: form.languageCode,
+        language: form.languageCode,
         consents: {
-          termsOfService: form.agreeTerms,
-          privacyPolicy: form.agreePrivacy,
-          marketing: false,
+          privacy: form.agreePrivacy,
+          location: form.agreeLocation,
+          camera: form.agreeCamera,
         },
+        agreedAt: form.agreedAt,
       });
 
+      // 회원가입 성공 시 로그인 화면 이동
       navigate("/login", {
         replace: true,
         state: {
@@ -344,9 +293,7 @@ export default function Signup() {
       });
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : "회원가입에 실패했습니다."
+        err?.message || "회원가입에 실패했습니다."
       );
     } finally {
       setLoading(false);
@@ -360,7 +307,7 @@ export default function Signup() {
       heading={
         "사용할 언어와 계정을\n설정해 주세요"
       }
-      description="선택한 언어는 메뉴와 분석 결과 전체에 적용됩니다."
+      description="가입 후 서비스에서 사용할 기본 언어를 선택해 주세요."
     >
       <form
         className="eth-auth-form"
@@ -373,9 +320,7 @@ export default function Signup() {
           <select
             value={form.languageCode}
             required
-            disabled={
-              languagesLoading || loading
-            }
+            disabled={languagesLoading || loading}
             onChange={(event) =>
               change(
                 "languageCode",
@@ -389,12 +334,12 @@ export default function Signup() {
                 : "지원 언어 중 선택"}
             </option>
 
-            {languages.map((language) => (
+            {languages.map((item) => (
               <option
-                key={language.code}
-                value={language.code}
+                key={item.code}
+                value={item.code}
               >
-                {language.name}
+                {item.name}
               </option>
             ))}
           </select>
@@ -417,12 +362,10 @@ export default function Signup() {
               autoComplete="email"
               value={form.email}
               required
+              disabled={loading}
               placeholder="name@example.com"
               onChange={(event) =>
-                change(
-                  "email",
-                  event.target.value
-                )
+                change("email", event.target.value)
               }
             />
 
@@ -458,13 +401,11 @@ export default function Signup() {
             type="text"
             autoComplete="name"
             required
+            disabled={loading}
             value={form.name}
             placeholder="이름을 입력해 주세요"
             onChange={(event) =>
-              change(
-                "name",
-                event.target.value
-              )
+              change("name", event.target.value)
             }
           />
         </label>
@@ -477,13 +418,11 @@ export default function Signup() {
             type="password"
             autoComplete="new-password"
             required
+            disabled={loading}
             value={form.password}
             placeholder="8자 이상, 영문·숫자 포함"
             onChange={(event) =>
-              change(
-                "password",
-                event.target.value
-              )
+              change("password", event.target.value)
             }
           />
         </label>
@@ -496,6 +435,7 @@ export default function Signup() {
             type="password"
             autoComplete="new-password"
             required
+            disabled={loading}
             value={form.passwordConfirm}
             placeholder="비밀번호 다시 입력"
             onChange={(event) =>
@@ -507,34 +447,15 @@ export default function Signup() {
           />
         </label>
 
-        {/* 필수 및 선택 동의 */}
+        {/* 개인정보 및 선택 동의 */}
         <div className="eth-auth-agreements">
           <label>
             <input
               type="checkbox"
-              checked={form.agreeTerms}
-              onChange={(event) =>
-                change(
-                  "agreeTerms",
-                  event.target.checked
-                )
-              }
-            />
-
-            <span>
-              <b>필수</b> 서비스 이용약관 동의
-            </span>
-          </label>
-
-          <label>
-            <input
-              type="checkbox"
               checked={form.agreePrivacy}
+              disabled={loading}
               onChange={(event) =>
-                change(
-                  "agreePrivacy",
-                  event.target.checked
-                )
+                changePrivacy(event.target.checked)
               }
             />
 
@@ -546,28 +467,47 @@ export default function Signup() {
           <label>
             <input
               type="checkbox"
-              checked={form.agreeLocationPhoto}
+              checked={form.agreeLocation}
+              disabled={loading}
               onChange={(event) =>
                 change(
-                  "agreeLocationPhoto",
+                  "agreeLocation",
                   event.target.checked
                 )
               }
             />
 
             <span>
-              <em>선택</em> 위치·사진 수집 및 이용 동의
+              <em>선택</em> 위치 정보 수집·이용 동의
+            </span>
+          </label>
+
+          <label>
+            <input
+              type="checkbox"
+              checked={form.agreeCamera}
+              disabled={loading}
+              onChange={(event) =>
+                change(
+                  "agreeCamera",
+                  event.target.checked
+                )
+              }
+            />
+
+            <span>
+              <em>선택</em> 사진 촬영·저장 동의
             </span>
           </label>
 
           <small>
-            선택 동의의 서버 필드가 아직
-            제공되지 않아 체크 여부는 가입
-            요청에 전송되지 않습니다.
+            위치 정보에 동의하지 않으면 출퇴근 GPS 인증을
+            이용할 수 없습니다. 선택 항목은 동의하지 않아도
+            회원가입할 수 있습니다.
           </small>
         </div>
 
-        {/* 오류 / 성공 안내 */}
+        {/* 오류 및 성공 안내 */}
         <AuthMessage>{error}</AuthMessage>
 
         {success && (
