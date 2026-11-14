@@ -63,7 +63,7 @@
 <img src="docs/screenshots/admin/13_case_INFO_REQUESTED_BatErdene_3_%EC%83%81%EB%8B%B4%EC%97%85%EB%AC%B4%EC%B2%98%EB%A6%AC.png" alt="상담 업무 처리" width="420">
 </p>
 
-> 전체 264장(사용자 앱 9개 상황 · 관리자 웹 69장)은 [`docs/screenshots/`](docs/screenshots/README.md)에 있습니다. 모든 데이터는 시연용 가상 데이터입니다.
+> 운영 서버(현재 종료)에서 실제 API로 찍은 화면입니다. 전체 264장(사용자 앱 9개 상황 · 관리자 웹 69장)은 [`docs/screenshots/`](docs/screenshots/README.md)에 있습니다. 모든 데이터는 시연용 가상 데이터입니다.
 
 ## 프로젝트 구조
 
@@ -97,12 +97,14 @@ npm run dev:admin    # http://localhost:5174/admin/
 환경변수(`apps/<앱>/.env.local`):
 
 ```bash
-VITE_API_BASE_URL=https://일한만큼.kro.kr   # 또는 로컬 백엔드 http://localhost:8080
+VITE_API_BASE_URL=http://localhost:8080   # 로컬 백엔드(easython-2026/back). 운영 서버는 종료됨
 ```
 
 빌드: `npm run build:user`, `npm run build:admin`
 
-## 배포
+## 배포 (해커톤 기간 운영 구성 · 현재 종료)
+
+> 해커톤이 끝나 서버를 내렸기 때문에 아래 주소는 더 이상 접속되지 않습니다. 실제 동작 화면은 [`docs/screenshots/`](docs/screenshots/README.md)의 캡처(운영 당시 실제 API·AI 응답)로 확인할 수 있습니다.
 
 | 경로 | 대상 |
 | --- | --- |
@@ -110,7 +112,7 @@ VITE_API_BASE_URL=https://일한만큼.kro.kr   # 또는 로컬 백엔드 http:/
 | `https://일한만큼.kro.kr/admin/` | 관리자 웹 (Vercel, Vite `base: '/admin/'` + `BrowserRouter basename="/admin"`) |
 | `https://일한만큼.kro.kr/api/v1/` | 백엔드 API ([easython-2026/back](https://github.com/easython-2026/back)) |
 
-한 도메인 아래에서 백엔드의 nginx가 경로별로 나눠 보내므로 프론트와 API가 같은 출처(CORS 불필요)입니다. 각 앱은 SPA 새로고침을 위해 `vercel.json`에서 모든 경로를 `index.html`로 보냅니다.
+한 도메인 아래에서 백엔드의 nginx가 경로별로 나눠 보내 프론트와 API가 같은 출처(CORS 불필요)였습니다. 각 앱은 SPA 새로고침을 위해 `vercel.json`에서 모든 경로를 `index.html`로 보냅니다.
 
 ## 기술 스택
 
