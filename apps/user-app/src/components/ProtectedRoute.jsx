@@ -1,6 +1,22 @@
-import { Outlet } from "react-router";
+import { Navigate, Outlet, useLocation } from "react-router";
+import useAuth from "../hooks/useAuth";
 
 export default function ProtectedRoute() {
-  // 개발 중 임시로 로그인 인증 생략
+  const { isAuthenticated } = useAuth();
+  const location = useLocation();
+
+  console.log("ProtectedRoute 실행됨");
+  console.log("로그인 상태:", isAuthenticated);
+
+  if (!isAuthenticated) {
+    return (
+      <Navigate
+        to="/login"
+        state={{ from: location }}
+        replace
+      />
+    );
+  }
+
   return <Outlet />;
 }
