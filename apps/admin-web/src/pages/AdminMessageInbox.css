@@ -1,0 +1,661 @@
+
+/* ========================================
+   상담 메시지함
+======================================== */
+
+.admin-inbox {
+    width: 100%;
+    max-width: 1400px;
+    min-width: 0;
+    margin: 0 auto;
+    color: #2d2928;
+  }
+  
+  .admin-inbox,
+  .admin-inbox *,
+  .admin-inbox *::before,
+  .admin-inbox *::after {
+    box-sizing: border-box;
+  }
+  
+  /* ========================================
+     페이지 헤더
+  ======================================== */
+  
+  .admin-inbox__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 18px;
+    margin-bottom: 25px;
+  }
+  
+  .admin-inbox__eyebrow {
+    color: #c16a4c;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+  }
+  
+  .admin-inbox__header h1 {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 10px 0;
+    font-size: 30px;
+    letter-spacing: -0.8px;
+  }
+  
+  .admin-inbox__header h1 svg {
+    flex-shrink: 0;
+    color: #f56b4a;
+  }
+  
+  .admin-inbox__header p {
+    margin: 0;
+    color: #978982;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  
+  .admin-inbox__refresh {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 11px 15px;
+    border: 1px solid #e8dfd9;
+    border-radius: 11px;
+    background: #fff;
+    color: #665951;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  
+  .admin-inbox__refresh:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .admin-inbox__refresh:hover:not(:disabled) {
+    background: #fff7f2;
+  }
+  
+  /* ========================================
+     상담 현황 요약
+  ======================================== */
+  
+  .admin-inbox__summary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .admin-inbox__summary-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
+    padding: 21px;
+    border: 1px solid #ece4de;
+    border-radius: 16px;
+    background: #fff;
+  }
+  
+  .admin-inbox__summary-item.has-unread {
+    border-color: #f2c7c0;
+    background: #fffaf9;
+  }
+  
+  .admin-inbox__summary-icon {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 49px;
+    height: 49px;
+    border-radius: 14px;
+    background: #fff0e9;
+    color: #f56b4a;
+  }
+  
+  .admin-inbox__summary-icon.is-unread {
+    background: #eef1ff;
+    color: #5267cb;
+  }
+  
+  .admin-inbox__summary-item > div:last-of-type {
+    min-width: 0;
+  }
+  
+  .admin-inbox__summary-item > div > span {
+    display: block;
+    color: #91847a;
+    font-size: 12px;
+  }
+  
+  .admin-inbox__summary-item strong {
+    display: block;
+    margin-top: 7px;
+    font-size: 26px;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+  }
+  
+  .admin-inbox__summary-item strong small {
+    margin-left: 5px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #92857b;
+  }
+  
+  .admin-inbox__summary-dot {
+    position: absolute;
+    top: 18px;
+    right: 19px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #dc4444;
+    box-shadow: 0 0 0 4px rgba(220, 68, 68, 0.1);
+  }
+  
+  /* ========================================
+     검색 및 기본 정렬 안내
+  ======================================== */
+  
+  .admin-inbox__toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  
+  .admin-inbox__search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    max-width: 520px;
+    min-width: 0;
+    padding: 0 15px;
+    border: 1px solid #e6ddd7;
+    border-radius: 12px;
+    background: #fff;
+    color: #9a8c82;
+  }
+  
+  .admin-inbox__search:focus-within {
+    border-color: #f56b4a;
+    box-shadow: 0 0 0 3px rgba(245, 107, 74, 0.09);
+  }
+  
+  .admin-inbox__search > svg {
+    flex-shrink: 0;
+  }
+  
+  .admin-inbox__search input {
+    width: 100%;
+    min-width: 0;
+    height: 46px;
+    border: 0;
+    outline: none;
+    background: transparent;
+    font: inherit;
+    font-size: 13px;
+    color: #3d332d;
+  }
+  
+  .admin-inbox__sort-info {
+    color: #998b81;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  
+  /* ========================================
+     메시지 목록
+  ======================================== */
+  
+  .admin-inbox__list {
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid #eae3dd;
+    border-radius: 16px;
+    background: #fff;
+  }
+  
+  .admin-inbox__rows {
+    width: 100%;
+  }
+  
+  .admin-inbox__conversation {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    min-width: 0;
+    min-height: 132px;
+    padding: 22px 24px;
+    border: 0;
+    border-bottom: 1px solid #f0eae5;
+    background: #fff;
+    color: inherit;
+    text-align: left;
+    font: inherit;
+    cursor: pointer;
+    transition: background-color 0.15s;
+  }
+  
+  .admin-inbox__conversation:last-child {
+    border-bottom: 0;
+  }
+  
+  .admin-inbox__conversation:hover {
+    background: #fffaf7;
+  }
+  
+  .admin-inbox__conversation:focus-visible {
+    outline: 2px solid #f56b4a;
+    outline-offset: -3px;
+  }
+  
+  /* ========================================
+     읽지 않은 메시지가 있는 사건
+  ======================================== */
+  
+  .admin-inbox__conversation.has-unread {
+    background: #fff8f7;
+  }
+  
+  .admin-inbox__conversation.has-unread::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 4px;
+    background: #dc4444;
+  }
+  
+  .admin-inbox__conversation.has-unread:hover {
+    background: #fff0ed;
+  }
+  
+  /* 아바타 */
+  
+  .admin-inbox__avatar {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 50px;
+    height: 50px;
+    border-radius: 15px;
+    background: #fff0e9;
+    color: #cb684a;
+    font-size: 17px;
+    font-weight: 800;
+  }
+  
+  .admin-inbox__conversation.has-unread
+  .admin-inbox__avatar {
+    background: #ffe6e1;
+    color: #bc463f;
+  }
+  
+  /* ========================================
+     사건 정보
+  ======================================== */
+  
+  .admin-inbox__conversation-main {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    flex: 1;
+    min-width: 0;
+  }
+  
+  /* 노동자 이름, 사건 ID, 미읽음 배지 */
+  
+  .admin-inbox__conversation-top {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    column-gap: 10px;
+    row-gap: 7px;
+    min-width: 0;
+  }
+  
+  .admin-inbox__worker-name {
+    color: #302923;
+    font-size: 15px;
+    font-weight: 750;
+    line-height: 1.35;
+  }
+  
+  .admin-inbox__conversation.has-unread
+  .admin-inbox__worker-name {
+    color: #2d2928;
+    font-weight: 850;
+  }
+  
+  /* 빨간 점 */
+  
+  .admin-inbox__red-dot {
+    display: inline-block;
+    flex: 0 0 9px;
+    width: 9px;
+    height: 9px;
+    margin: 0;
+    padding: 0;
+    border-radius: 50%;
+    background: #dc4444;
+    box-shadow: 0 0 0 3px rgba(220, 68, 68, 0.11);
+  }
+  
+  .admin-inbox__case-id {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #a0938b;
+    font-size: 12px;
+  }
+  
+  /* ========================================
+     미읽음 배지
+     아이콘 + 텍스트 가로 정렬
+  ======================================== */
+  
+  .admin-inbox__unread-badge {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: nowrap;
+    gap: 8px;
+  
+    width: max-content;
+    max-width: 100%;
+    min-height: 28px;
+    margin: 0;
+    padding: 6px 10px;
+  
+    border-radius: 999px;
+    background: #ffe7e3;
+    color: #c24039;
+  
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  
+  .admin-inbox__unread-badge > svg {
+    display: block;
+    flex: 0 0 13px;
+    width: 13px;
+    height: 13px;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .admin-inbox__unread-text {
+    display: block;
+    flex: 0 0 auto;
+    width: auto;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    color: inherit;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 15px;
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
+  }
+  
+  /* ========================================
+     처리 상태 및 담당자
+  ======================================== */
+  
+  .admin-inbox__conversation-sub {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 9px;
+    min-width: 0;
+    color: #73675e;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  
+  .admin-inbox__separator {
+    color: #c3b9b1;
+  }
+  
+  /* 접수 일시 */
+  
+  .admin-inbox__conversation-date {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px;
+    color: #a1958b;
+    font-size: 11px;
+    line-height: 1.4;
+  }
+  
+  .admin-inbox__conversation-date > svg {
+    display: block;
+    flex-shrink: 0;
+  }
+  
+  /* ========================================
+     대화 열기 버튼
+  ======================================== */
+  
+  .admin-inbox__open {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    color: #bf5e40;
+    font-size: 12px;
+    font-weight: 750;
+    white-space: nowrap;
+  }
+  
+  .admin-inbox__open > svg {
+    flex-shrink: 0;
+    transition: transform 0.15s ease;
+  }
+  
+  .admin-inbox__conversation:hover
+  .admin-inbox__open > svg {
+    transform: translateX(4px);
+  }
+  
+  /* ========================================
+     페이지네이션
+  ======================================== */
+  
+  .admin-inbox__pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 15px;
+    padding: 19px 3px;
+  }
+  
+  .admin-inbox__pagination > span {
+    color: #998b81;
+    font-size: 12px;
+  }
+  
+  .admin-inbox__pagination > div {
+    display: flex;
+    gap: 9px;
+  }
+  
+  .admin-inbox__pagination button {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 10px 13px;
+    border: 1px solid #e8ded8;
+    border-radius: 10px;
+    background: #fff;
+    color: #665950;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  
+  .admin-inbox__pagination button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  
+  .admin-inbox__pagination button:hover:not(:disabled) {
+    border-color: #f56b4a;
+    color: #c85f42;
+  }
+  
+  /* ========================================
+     로딩 / 오류 / 빈 상태
+  ======================================== */
+  
+  .admin-inbox__empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 230px;
+    padding: 35px;
+    color: #aa9b91;
+    text-align: center;
+  }
+  
+  .admin-inbox__empty p {
+    margin: 0;
+    font-size: 13px;
+  }
+  
+  .admin-inbox__error {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding: 15px;
+    border: 1px solid #f1d3cb;
+    border-radius: 11px;
+    background: #fff0ed;
+    color: #ad483c;
+    font-size: 12px;
+  }
+  
+  .admin-inbox__error button {
+    margin-left: auto;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  
+  /* 하단 안내 */
+  
+  .admin-inbox__notice {
+    margin: 12px 0 0;
+    color: #9b8e84;
+    font-size: 11px;
+    line-height: 1.7;
+  }
+  
+  /* 로딩 회전 */
+  
+  .admin-inbox__spin {
+    animation: admin-inbox-spin 0.8s linear infinite;
+  }
+  
+  @keyframes admin-inbox-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  /* ========================================
+     반응형
+  ======================================== */
+  
+  @media (max-width: 700px) {
+    .admin-inbox__header h1 {
+      font-size: 24px;
+    }
+  
+    .admin-inbox__summary {
+      grid-template-columns: 1fr;
+    }
+  
+    .admin-inbox__toolbar {
+      flex-wrap: wrap;
+    }
+  
+    .admin-inbox__search {
+      flex-basis: 100%;
+      max-width: 100%;
+    }
+  
+    .admin-inbox__sort-info {
+      font-size: 11px;
+    }
+  
+    .admin-inbox__conversation {
+      gap: 10px;
+      min-height: 110px;
+      padding: 18px 14px;
+    }
+  
+    .admin-inbox__avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 13px;
+      font-size: 15px;
+    }
+  
+    .admin-inbox__conversation-top {
+      gap: 7px;
+    }
+  
+    .admin-inbox__unread-badge {
+      padding: 5px 9px;
+      gap: 6px;
+    }
+  
+    .admin-inbox__open > span {
+      display: none;
+    }
+  
+    .admin-inbox__pagination {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  
+    .admin-inbox__pagination > div {
+      justify-content: space-between;
+    }
+  }
+  

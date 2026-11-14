@@ -1,0 +1,458 @@
+
+.admin-staff {
+    width: 100%;
+    max-width: 1440px;
+    min-width: 0;
+    margin: 0 auto;
+    color: #2d2928;
+  }
+  
+  .admin-staff,
+  .admin-staff * {
+    box-sizing: border-box;
+  }
+  
+  .admin-staff__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-bottom: 26px;
+  }
+  
+  .admin-staff__eyebrow {
+    color: #be6a4f;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+  }
+  
+  .admin-staff__header h1 {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    margin: 10px 0;
+    font-size: 29px;
+    letter-spacing: -0.7px;
+  }
+  
+  .admin-staff__header h1 svg {
+    color: #f56b4a;
+  }
+  
+  .admin-staff__header p {
+    margin: 0;
+    color: #948980;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  
+  .admin-staff__refresh {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 12px 16px;
+    border: 1px solid #e8ded7;
+    border-radius: 11px;
+    background: #fff;
+    color: #62564f;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  
+  .admin-staff__refresh:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  /* 기관 요약 */
+  
+  .admin-staff__summary {
+    display: grid;
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .admin-staff__summary-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    min-width: 0;
+    min-height: 105px;
+    padding: 20px;
+    border: 1px solid #ebe3dd;
+    border-radius: 16px;
+    background: white;
+  }
+  
+  .admin-staff__summary-icon {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 46px;
+    height: 46px;
+    border-radius: 13px;
+    background: #fff0e9;
+    color: #f56b4a;
+  }
+  
+  .admin-staff__summary-item > div {
+    min-width: 0;
+  }
+  
+  .admin-staff__summary-item > div > span {
+    display: block;
+    margin-bottom: 7px;
+    color: #968980;
+    font-size: 12px;
+  }
+  
+  .admin-staff__summary-item strong {
+    display: block;
+    overflow-wrap: anywhere;
+    font-size: 18px;
+  }
+  
+  .admin-staff__summary-item small {
+    margin-left: 5px;
+    color: #988b82;
+    font-size: 12px;
+  }
+  
+  .admin-staff__mock {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    margin-bottom: 19px;
+    padding: 13px 16px;
+    border-radius: 11px;
+    background: #fff5e9;
+    color: #947345;
+    font-size: 12px;
+    line-height: 1.65;
+  }
+  
+  .admin-staff__mock svg {
+    flex-shrink: 0;
+  }
+  
+  /* 담당자 목록 */
+  
+  .admin-staff__directory {
+    overflow: hidden;
+    border: 1px solid #eae3dc;
+    border-radius: 18px;
+    background: white;
+  }
+  
+  .admin-staff__directory-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding: 23px 25px;
+    border-bottom: 1px solid #efe8e3;
+  }
+  
+  .admin-staff__directory-heading > div > span {
+    color: #bf7154;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+  }
+  
+  .admin-staff__directory-heading h2 {
+    margin: 7px 0 0;
+    font-size: 19px;
+  }
+  
+  .admin-staff__search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    width: 300px;
+    max-width: 100%;
+    padding: 0 12px;
+    border: 1px solid #e8dfd8;
+    border-radius: 10px;
+    color: #a09388;
+  }
+  
+  .admin-staff__search:focus-within {
+    border-color: #f56b4a;
+  }
+  
+  .admin-staff__search svg {
+    flex-shrink: 0;
+  }
+  
+  .admin-staff__search input {
+    width: 100%;
+    min-width: 0;
+    height: 43px;
+    border: 0;
+    outline: none;
+    background: transparent;
+    font: inherit;
+    font-size: 13px;
+    color: #3c322d;
+  }
+  
+  .admin-staff__member {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
+    padding: 20px 25px;
+    border-bottom: 1px solid #f0eae5;
+  }
+  
+  .admin-staff__member:last-child {
+    border-bottom: 0;
+  }
+  
+  .admin-staff__member-avatar {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 47px;
+    height: 47px;
+    border-radius: 13px;
+    background: #fff0e9;
+    color: #cf6d4d;
+  }
+  
+  .admin-staff__member-info {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .admin-staff__member-name {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 9px;
+  }
+  
+  .admin-staff__member-name strong {
+    font-size: 15px;
+  }
+  
+  .admin-staff__member-info small {
+    display: block;
+    margin-top: 7px;
+    color: #a29489;
+    font-size: 11px;
+    overflow-wrap: anywhere;
+  }
+  
+  .admin-staff__me {
+    padding: 5px 8px;
+    border-radius: 20px;
+    background: #fff0e9;
+    color: #c45d41;
+    font-size: 10px;
+    font-weight: 750;
+  }
+  
+  .admin-staff__member-languages {
+    flex: 1.5;
+    min-width: 0;
+  }
+  
+  .admin-staff__member-languages > span {
+    display: block;
+    margin-bottom: 8px;
+    color: #9c8f86;
+    font-size: 11px;
+  }
+  
+  .admin-staff__member-languages > div {
+    display: flex;
+    gap: 7px;
+    flex-wrap: wrap;
+  }
+  
+  .admin-staff__language {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 10px;
+    border-radius: 20px;
+    background: #f6f3f0;
+    color: #6a5d54;
+    font-size: 11px;
+    font-weight: 650;
+  }
+  
+  .admin-staff__no-language {
+    color: #ad9f94;
+    font-size: 12px;
+  }
+  
+  .admin-staff__member-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    color: #68836b;
+    font-size: 11px;
+  }
+  
+  .admin-staff__empty {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 240px;
+    padding: 30px;
+    color: #a69a90;
+    text-align: center;
+  }
+  
+  .admin-staff__empty p {
+    margin: 0;
+    font-size: 13px;
+  }
+  
+  .admin-staff__error {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 14px;
+    padding: 13px;
+    border-radius: 10px;
+    background: #fff0ed;
+    color: #b34e3f;
+    font-size: 12px;
+  }
+  
+  .admin-staff__error button {
+    margin-left: auto;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-weight: 750;
+    cursor: pointer;
+  }
+  
+  /* 하단 안내 */
+  
+  .admin-staff__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 18px;
+    margin-top: 21px;
+    padding: 20px;
+    border: 1px solid #ebe3dd;
+    border-radius: 15px;
+    background: #fffcfa;
+  }
+  
+  .admin-staff__footer > div {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .admin-staff__footer > div > svg {
+    color: #d56d4e;
+    flex-shrink: 0;
+  }
+  
+  .admin-staff__footer p {
+    margin: 0;
+    color: #8a7e75;
+    font-size: 12px;
+    line-height: 1.7;
+  }
+  
+  .admin-staff__footer button {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 12px 16px;
+    border: 0;
+    border-radius: 10px;
+    background: #f56b4a;
+    color: #fff;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 750;
+    cursor: pointer;
+  }
+  
+  .admin-staff__footer button:hover {
+    background: #e45e40;
+  }
+  
+  .admin-staff__spin {
+    animation: admin-staff-spin 0.8s linear infinite;
+  }
+  
+  @keyframes admin-staff-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  @media (max-width: 1000px) {
+    .admin-staff__summary {
+      grid-template-columns: 1fr;
+    }
+  
+    .admin-staff__member {
+      flex-wrap: wrap;
+    }
+  
+    .admin-staff__member-languages {
+      flex-basis: 100%;
+      padding-left: 63px;
+    }
+  }
+  
+  @media (max-width: 650px) {
+    .admin-staff__header h1 {
+      font-size: 23px;
+    }
+  
+    .admin-staff__directory-heading {
+      padding: 18px;
+    }
+  
+    .admin-staff__search {
+      width: 100%;
+    }
+  
+    .admin-staff__member {
+      padding: 18px;
+    }
+  
+    .admin-staff__member-status {
+      margin-left: auto;
+    }
+  
+    .admin-staff__member-languages {
+      padding-left: 0;
+    }
+  
+    .admin-staff__footer {
+      align-items: stretch;
+    }
+  
+    .admin-staff__footer button {
+      justify-content: center;
+      width: 100%;
+    }
+  }
+  

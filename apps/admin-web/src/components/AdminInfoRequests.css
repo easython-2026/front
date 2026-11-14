@@ -1,0 +1,236 @@
+
+.admin-info-requests {
+    width: 100%;
+    min-width: 0;
+    padding: 26px 28px;
+    border: 1px solid #EAE4DF;
+    border-radius: 22px;
+    background: #FFFFFF;
+    color: #2D2928;
+    box-sizing: border-box;
+  }
+  
+  .admin-info-requests * {
+    box-sizing: border-box;
+  }
+  
+  .admin-info-requests__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 22px;
+    border-bottom: 1px solid #F0EBE7;
+  }
+  
+  .admin-info-requests__header > div > span {
+    color: #B65A3D;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+  }
+  
+  .admin-info-requests__header h3 {
+    margin: 9px 0;
+    font-size: 21px;
+    letter-spacing: -0.5px;
+  }
+  
+  .admin-info-requests__header p {
+    margin: 0;
+    font-size: 12px;
+    color: #91857E;
+    line-height: 1.7;
+  }
+  
+  .admin-info-requests__count {
+    flex-shrink: 0;
+    padding: 8px 12px;
+    border-radius: 18px;
+    background: #FFF0EB;
+    color: #B65A3D;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  
+  /* 요청 내역 */
+  
+  .admin-info-requests__history {
+    margin-top: 24px;
+  }
+  
+  .admin-info-requests__history h4,
+  .admin-info-requests__form h4 {
+    margin: 0 0 16px;
+    font-size: 16px;
+  }
+  
+  .admin-info-requests__empty {
+    padding: 23px 18px;
+    background: #F9F7F5;
+    border-radius: 12px;
+    text-align: center;
+    color: #9A8F88;
+    font-size: 13px;
+  }
+  
+  .admin-info-requests__list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .admin-info-requests__item {
+    border: 1px solid #EFE8E3;
+    background: #FFFCFA;
+    padding: 17px 18px;
+    border-radius: 13px;
+  }
+  
+  .admin-info-requests__item-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .admin-info-requests__item-top strong {
+    font-size: 12px;
+    color: #B65A3D;
+  }
+  
+  .admin-info-requests__item-top span {
+    font-size: 11px;
+    color: #9B9089;
+  }
+  
+  .admin-info-requests__item p {
+    margin: 11px 0 0;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #534942;
+    overflow-wrap: anywhere;
+  }
+  
+  /* 새 자료 요청 폼 */
+  
+  .admin-info-requests__form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 26px;
+    padding-top: 24px;
+    border-top: 1px solid #F0EBE7;
+  }
+  
+  .admin-info-requests__form label {
+    color: #5C5049;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  
+  .admin-info-requests__form textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 15px;
+    border: 1px solid #E3DCD7;
+    border-radius: 12px;
+    background: #FFFFFF;
+    color: #2D2928;
+    font: inherit;
+    font-size: 13px;
+    line-height: 1.7;
+    resize: vertical;
+    outline: none;
+  }
+  
+  .admin-info-requests__form textarea:focus {
+    border-color: #F56B4A;
+    box-shadow: 0 0 0 3px #F56B4A1A;
+  }
+  
+  .admin-info-requests__form textarea:disabled {
+    background: #F7F5F3;
+    cursor: not-allowed;
+  }
+  
+  .admin-info-requests__form-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+  }
+  
+  .admin-info-requests__form-bottom span {
+    color: #A19690;
+    font-size: 12px;
+  }
+  
+  .admin-info-requests__form-bottom button {
+    padding: 13px 18px;
+    border: 0;
+    border-radius: 11px;
+    background: #F56B4A;
+    color: white;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  
+  .admin-info-requests__form-bottom button:hover:not(:disabled) {
+    background: #E15F41;
+  }
+  
+  .admin-info-requests__form-bottom button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  
+  .admin-info-requests__error,
+  .admin-info-requests__success,
+  .admin-info-requests__hint {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.7;
+  }
+  
+  .admin-info-requests__error {
+    padding: 12px;
+    border-radius: 9px;
+    background: #FFF0EF;
+    color: #B63E38;
+  }
+  
+  .admin-info-requests__success {
+    padding: 12px;
+    border-radius: 9px;
+    background: #EFF9F0;
+    color: #347642;
+  }
+  
+  .admin-info-requests__hint {
+    color: #938780;
+  }
+  
+  .admin-info-requests__notice {
+    margin: 24px 0 0;
+    padding: 14px 16px;
+    background: #FFFAF4;
+    border-radius: 11px;
+    font-size: 12px;
+    line-height: 1.8;
+    color: #8E7563;
+  }
+  
+  @media (max-width: 600px) {
+    .admin-info-requests {
+      padding: 20px;
+    }
+  
+    .admin-info-requests__form-bottom {
+      align-items: stretch;
+      flex-direction: column;
+    }
+  }
+  
