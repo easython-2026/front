@@ -13,11 +13,17 @@ function shiftMonth(value, direction) {
   return new Date(Date.UTC(year, month - 1 + direction, 1)).toISOString().slice(0, 7);
 }
 function extractRecords(response) {
-  const data = unwrap(response);
-  if (Array.isArray(data)) return data;
-  if (Array.isArray(data?.records)) return data.records;
-  if (Array.isArray(data?.content)) return data.content;
-  return null;
+  const data = response?.data ?? response;
+
+  if (!Array.isArray(data?.days)) {
+    throw new Error("근무기록 응답 형식이 올바르지 않습니다.");
+  }
+
+  return data.days.map((item) => ({
+    ...item,
+    workDate: item.date,
+    recordId: item.recordId,
+  }));
 }
 export default function AttendanceHistory() {
   const [month, setMonth] = useState(localMonth);

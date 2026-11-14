@@ -54,12 +54,14 @@ export default function AttendanceCapture() {
       setGpsAccuracy(coords.accuracy);
       // 이 요청 필드는 Figma 프로토타입의 action과 브라우저 GPS 좌표를 사용합니다.
       // 서버가 사용하는 필드명이 다르다면 checkLocation()의 body만 API 명세에 맞춰 조정해야 합니다.
-      const result = unwrap(await checkLocation({
-        action,
-        latitude: coords.latitude,
-        longitude: coords.longitude,
-        accuracy: coords.accuracy,
-      }));
+      const result = unwrap(
+        await checkLocation({
+          type: action,
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          accuracyMeters: coords.accuracy,
+        })
+      );
       if (result?.verified !== true || !result?.verificationToken) {
         throw new Error("서버에서 근무장소 인증 완료 토큰을 받지 못했습니다.");
       }
@@ -146,8 +148,17 @@ export default function AttendanceCapture() {
     try {
       const form = new FormData();
       form.append("verificationToken", verificationToken);
-      form.append("photo", photo, photo.name);
-      // 서버가 multipart verificationToken/photo 필드를 지원하는지 확인 필요.
+form.append("photo", photo, photo.name);
+form.append("latitude", String(coords.latitude));
+form.append("longitude", String(coords.longitude));
+form.append(
+  "accuracyMeters",
+  String(coords.accuracy)
+);
+form.append(
+  "clientCapturedAt",
+  new Date().toISOString()
+);
       const result = unwrap(await (isIn ? clockIn(form) : clockOut(form)));
       setReceipt(result ?? {});
       releaseCamera();

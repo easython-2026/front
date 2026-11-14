@@ -211,9 +211,8 @@ export default function AttendanceDetail() {
       }
       if (breakChanged) {
         await updateBreakTime(recordId, {
-          breakMinutes: breakNumber,
-          reason: form.reason.trim(),
-        });
+  breakMinutes: breakNumber,
+});
       }
       setEditing(false);
       await load();
