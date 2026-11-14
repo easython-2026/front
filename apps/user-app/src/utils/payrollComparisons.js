@@ -38,6 +38,18 @@ function normalizeComparison(item) {
 
 export function payrollOverviewFromComparisons(response, month) {
   const data = unwrapPayroll(response);
+
+  // 서버 응답(월 상태 객체): { month, state, statementId, payday, comparison }
+  if (data && typeof data === 'object' && !Array.isArray(data) && typeof data.state === 'string') {
+    return {
+      month: data.month ?? month,
+      status: data.state, // NOT_SUBMITTED | READY | COMPARED
+      statementId: data.statementId ?? null,
+      payday: data.payday ?? null,
+      comparison: data.comparison ? normalizeComparison(data.comparison) : null,
+    };
+  }
+
   const list = asList(data);
 
   if (list === null && (!data || typeof data !== 'object' || Array.isArray(data))) {
