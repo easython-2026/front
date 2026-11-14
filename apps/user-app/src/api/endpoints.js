@@ -162,37 +162,58 @@ export const ENDPOINTS = {
     },
   },
 
-  // 3. 급여 비교
+
+  // 3. 급여 관리 및 비교
   salary: {
+    // 선택 월의 급여 상태 조회
+    getOverview: {
+      method: "GET",
+      path: `${API}/payroll/overview`,
+    },
+
+    // 급여명세서 업로드 및 OCR 분석
     uploadStatement: {
       method: "POST",
       path: `${API}/payroll/statements`,
     },
+
+    // 급여명세서 상세 조회
     getStatement: {
       method: "GET",
       path: `${API}/payroll/statements/{statementId}`,
     },
+
+    // OCR 추출값 수정 및 최종 확정
     updateStatement: {
       method: "PATCH",
       path: `${API}/payroll/statements/{statementId}`,
     },
+
+    // 급여명세서가 없을 때 실제 수령액 직접 입력
     addManualStatement: {
       method: "POST",
       path: `${API}/payroll/statements/manual`,
     },
+
+    // 급여 비교 목록 조회
     getComparisons: {
       method: "GET",
       path: `${API}/payroll/comparisons`,
     },
+
+    // 예상 임금과 실제 지급액 비교 실행
     calculateComparison: {
       method: "POST",
       path: `${API}/payroll/comparisons`,
     },
+
+    // 개별 급여 비교 결과 조회
     getComparison: {
       method: "GET",
       path: `${API}/payroll/comparisons/{comparisonId}`,
     },
   },
+
 
   // 4. 리포트 및 진정서
   report: {
