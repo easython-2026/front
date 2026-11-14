@@ -167,8 +167,10 @@ const API_BASE_URL = (
   
     clearAdminAuth();
   
-    if (window.location.pathname !== "/login") {
-      window.location.replace("/login");
+    // 라우터 basename(/admin) 밖에서 직접 이동하므로 BASE_URL 을 붙인다.
+    const loginPath = `${import.meta.env.BASE_URL}login`;
+    if (window.location.pathname !== loginPath) {
+      window.location.replace(loginPath);
     }
   }
   
