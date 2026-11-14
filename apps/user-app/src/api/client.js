@@ -1,5 +1,3 @@
-// API 공통 설정
-
 
 import { ENDPOINTS } from "./endpoints";
 
@@ -28,6 +26,13 @@ export class ApiError extends Error {
     this.name = "ApiError";
     this.status = status;
     this.data = data;
+
+    // 서버가 반환한 오류 코드
+    this.errorCode =
+      data &&
+      typeof data === "object"
+        ? data.errorCode ?? null
+        : null;
   }
 }
 
@@ -61,7 +66,9 @@ function buildQuery(query = {}) {
 
     if (Array.isArray(value)) {
       value.forEach((item) => {
-        searchParams.append(key, String(item));
+        if (item !== undefined && item !== null) {
+          searchParams.append(key, String(item));
+        }
       });
     } else {
       searchParams.append(key, String(value));
@@ -72,7 +79,7 @@ function buildQuery(query = {}) {
 }
 
 // 응답 데이터 파싱
-async function parseResponse(response, responseType) {
+async function parseResponse(response, responseType = "auto") {
   if (response.status === 204 || response.status === 205) {
     return null;
   }
@@ -96,6 +103,27 @@ async function parseResponse(response, responseType) {
   }
 
   return response.text();
+}
+
+// 오류 응답 전용 파싱
+async function parseErrorResponse(response) {
+  if (response.status === 204 || response.status === 205) {
+    return null;
+  }
+
+  const contentType =
+    response.headers.get("content-type") || "";
+
+  // 오류는 JSON을 우선 확인
+  if (
+    contentType.includes("application/json") ||
+    contentType.includes("+json")
+  ) {
+    return response.json().catch(() => null);
+  }
+
+  // JSON이 아니면 텍스트로 처리
+  return response.text().catch(() => null);
 }
 
 // 공통 API 요청
@@ -136,7 +164,15 @@ export async function apiRequest(
 
   const requestHeaders = new Headers(headers);
 
-  requestHeaders.set("Accept", "application/json");
+  // PDF 요청과 일반 API 요청 구분
+  if (!requestHeaders.has("Accept")) {
+    requestHeaders.set(
+      "Accept",
+      responseType === "blob"
+        ? "application/pdf, application/json"
+        : "application/json"
+    );
+  }
 
   const accessToken =
     token === undefined
@@ -156,7 +192,7 @@ export async function apiRequest(
     if (body instanceof FormData) {
       requestBody = body;
 
-      // FormData boundary 자동 설정
+      // multipart boundary는 브라우저가 자동 생성
       requestHeaders.delete("Content-Type");
     } else if (
       body instanceof Blob ||
@@ -184,7 +220,7 @@ export async function apiRequest(
       signal,
     });
   } catch (error) {
-    if (error.name === "AbortError") {
+    if (error?.name === "AbortError") {
       throw error;
     }
 
@@ -195,23 +231,50 @@ export async function apiRequest(
     );
   }
 
+  // ========================================
+  // 1. HTTP 오류 응답을 먼저 처리
+  // ========================================
+  if (!response.ok) {
+    const errorData =
+      await parseErrorResponse(response);
+
+    const message =
+      errorData &&
+      typeof errorData === "object"
+        ? errorData.message ||
+          errorData.error?.message ||
+          `요청 실패 (${response.status})`
+        : typeof errorData === "string" &&
+            errorData.trim()
+          ? errorData
+          : `요청 실패 (${response.status})`;
+
+    throw new ApiError(
+      message,
+      response.status,
+      errorData
+    );
+  }
+
+  // ========================================
+  // 2. 성공 응답만 요청 타입에 맞게 파싱
+  // ========================================
   const data = await parseResponse(
     response,
     responseType
   );
 
-  if (!response.ok) {
-    const message =
-      data &&
-      typeof data === "object" &&
-      !(data instanceof Blob)
-        ? data.message ||
-          data.error?.message ||
-          `요청 실패 (${response.status})`
-        : `요청 실패 (${response.status})`;
-
+  // ========================================
+  // 3. 공통 JSON 응답의 success 확인
+  // ========================================
+  if (
+    data &&
+    typeof data === "object" &&
+    !(data instanceof Blob) &&
+    data.success === false
+  ) {
     throw new ApiError(
-      message,
+      data.message || "API 요청에 실패했습니다.",
       response.status,
       data
     );
