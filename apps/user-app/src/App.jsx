@@ -28,6 +28,16 @@ import ContractReview from "./pages/user/ContractReview";
 import SalaryUpload from "./pages/user/SalaryUpload";
 import SalaryStatement from "./pages/user/SalaryStatement";
 
+import Salary from "./pages/user/Salary";
+import SalaryComparison from "./pages/user/SalaryComparison";
+
+import Reports from "./pages/user/Reports";
+import Evidences from "./pages/user/Evidences";
+
+import Petitions from "./pages/user/Petitions";
+import PetitionCreate from "./pages/user/PetitionCreate";
+import PetitionDetail from "./pages/user/PetitionDetail";
+
 // Figma 디자인 완성 전 사용할 임시 화면
 const page = (title) => (
   <PagePlaceholder title={title} />
@@ -119,7 +129,7 @@ export default function App() {
           {/* 3. 급여 비교 */}
           <Route
             path="/salary"
-            element={page("급여 비교")}
+            element={<Salary />}
           />
 
           <Route
@@ -132,25 +142,35 @@ export default function App() {
             element={<SalaryStatement />}
           />
 
+          <Route
+            path="/salary/:comparisonId"
+            element={<SalaryComparison />}
+          />
+
           {/* 4. 리포트 및 진정서 */}
           <Route
             path="/reports"
-            element={page("월별 리포트")}
+            element={<Reports />}
+          />
+
+          <Route
+            path="/evidences"
+            element={<Evidences />}
           />
 
           <Route
             path="/petitions"
-            element={page("진정서 목록")}
+            element={<Petitions />}
           />
 
           <Route
             path="/petitions/new"
-            element={page("진정서 생성")}
+            element={<PetitionCreate />}
           />
 
           <Route
             path="/petitions/:petitionId"
-            element={page("진정서 상세")}
+            element={<PetitionDetail />}
           />
 
           {/* 4. 상담 연결 */}
