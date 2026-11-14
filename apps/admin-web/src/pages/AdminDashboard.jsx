@@ -1,11 +1,33 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+
+import {
+  ClipboardList,
+  Clock3,
+  CheckCircle2,
+  AlertTriangle,
+  MessageCircle,
+  RefreshCw,
+  ArrowRight,
+  ChevronRight,
+  ShieldCheck,
+  LoaderCircle,
+  CircleAlert,
+  Inbox,
+  ChartPie,
+} from "lucide-react";
+
 import {
   getAdminDashboard,
   getAdminConsultations,
 } from "../services/adminConsultationApi";
+
 import "./AdminDashboard.css";
+
+// ========================================
+// 초기 통계 데이터
+// ========================================
 
 const INITIAL_SUMMARY = {
   newCount: 0,
@@ -21,10 +43,20 @@ const URGENCY_LABELS = {
   LOW: "낮음",
 };
 
+// ========================================
+// 데이터 포맷
+// ========================================
+
 function formatWon(amount) {
   if (amount == null) return "확인 필요";
 
-  return `${Number(amount).toLocaleString("ko-KR")}원`;
+  const number = Number(amount);
+
+  if (!Number.isFinite(number)) {
+    return "확인 필요";
+  }
+
+  return `${number.toLocaleString("ko-KR")}원`;
 }
 
 function formatDate(dateString) {
@@ -32,7 +64,9 @@ function formatDate(dateString) {
 
   const date = new Date(dateString);
 
-  if (Number.isNaN(date.getTime())) return "-";
+  if (Number.isNaN(date.getTime())) {
+    return "-";
+  }
 
   return new Intl.DateTimeFormat("ko-KR", {
     timeZone: "Asia/Seoul",
@@ -44,19 +78,70 @@ function formatDate(dateString) {
   }).format(date);
 }
 
+// ========================================
+// 통계 카드 공통 컴포넌트
+// ========================================
+
+function StatCard({
+  icon: Icon,
+  color,
+  title,
+  description,
+  value,
+  loading,
+}) {
+  return (
+    <div className="admin-dashboard__stat-card">
+      <div
+        className={`admin-dashboard__stat-icon ${color}`}
+      >
+        <Icon size={29} strokeWidth={1.8} />
+      </div>
+
+      <div className="admin-dashboard__stat-text">
+        <p>{title}</p>
+        <small>{description}</small>
+      </div>
+
+      <strong>
+        {loading ? "-" : value}
+      </strong>
+    </div>
+  );
+}
+
+// ========================================
+// 관리자 대시보드
+// ========================================
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
 
-  const [summary, setSummary] = useState(INITIAL_SUMMARY);
-  const [consultations, setConsultations] = useState([]);
+  const [summary, setSummary] =
+    useState(INITIAL_SUMMARY);
 
-  const [summaryLoading, setSummaryLoading] = useState(true);
-  const [casesLoading, setCasesLoading] = useState(true);
+  const [consultations, setConsultations] =
+    useState([]);
 
-  const [summaryError, setSummaryError] = useState("");
-  const [casesError, setCasesError] = useState("");
+  const [summaryLoading, setSummaryLoading] =
+    useState(true);
 
-  const [reloadKey, setReloadKey] = useState(0);
+  const [casesLoading, setCasesLoading] =
+    useState(true);
+
+  const [summaryError, setSummaryError] =
+    useState("");
+
+  const [casesError, setCasesError] =
+    useState("");
+
+  const [reloadKey, setReloadKey] =
+    useState(0);
+
+  // ========================================
+  // 대시보드 API 조회
+  // Mock / 실제 API 공통
+  // ========================================
 
   useEffect(() => {
     let active = true;
@@ -67,31 +152,37 @@ export default function AdminDashboard() {
       setSummaryError("");
       setCasesError("");
 
-      // 상담 현황 통계 조회
+      // 상담 현황 통계
       const summaryRequest = getAdminDashboard()
         .then((data) => {
           if (!active) return;
 
           setSummary({
             newCount: data.newCount ?? 0,
-            inProgressCount: data.inProgressCount ?? 0,
+            inProgressCount:
+              data.inProgressCount ?? 0,
             closedCount: data.closedCount ?? 0,
-            highUrgencyCount: data.highUrgencyCount ?? 0,
-            unreadMessageCount: data.unreadMessageCount ?? 0,
+            highUrgencyCount:
+              data.highUrgencyCount ?? 0,
+            unreadMessageCount:
+              data.unreadMessageCount ?? 0,
           });
         })
         .catch((error) => {
           if (!active) return;
 
           setSummaryError(
-            error.message || "상담 현황 조회에 실패했습니다."
+            error.message ||
+              "상담 현황 조회에 실패했습니다."
           );
         })
         .finally(() => {
-          if (active) setSummaryLoading(false);
+          if (active) {
+            setSummaryLoading(false);
+          }
         });
 
-      // 최근 접수된 상담 사건 3건 조회
+      // 최근 접수 상담 사건 3건 조회
       const casesRequest = getAdminConsultations({
         sort: "recent",
         page: 1,
@@ -110,11 +201,14 @@ export default function AdminDashboard() {
           if (!active) return;
 
           setCasesError(
-            error.message || "최근 사건 조회에 실패했습니다."
+            error.message ||
+              "최근 사건 조회에 실패했습니다."
           );
         })
         .finally(() => {
-          if (active) setCasesLoading(false);
+          if (active) {
+            setCasesLoading(false);
+          }
         });
 
       await Promise.allSettled([
@@ -129,6 +223,10 @@ export default function AdminDashboard() {
       active = false;
     };
   }, [reloadKey]);
+
+  // ========================================
+  // 통계 계산
+  // ========================================
 
   const totalCases =
     summary.newCount +
@@ -158,11 +256,23 @@ export default function AdminDashboard() {
     setReloadKey((prev) => prev + 1);
   };
 
+  const isReloading =
+    summaryLoading || casesLoading;
+
+  // ========================================
+  // 렌더링
+  // ========================================
+
   return (
     <div className="admin-dashboard">
+      {/* ====================================
+          페이지 헤더
+      ==================================== */}
+
       <div className="admin-dashboard__heading">
         <div>
           <span>상담 현황</span>
+
           <h2>대시보드</h2>
         </div>
 
@@ -170,100 +280,173 @@ export default function AdminDashboard() {
           type="button"
           className="admin-dashboard__reload"
           onClick={handleReload}
-          disabled={summaryLoading || casesLoading}
+          disabled={isReloading}
         >
+          <RefreshCw
+            size={17}
+            strokeWidth={1.8}
+            className={
+              isReloading
+                ? "admin-dashboard__spin"
+                : ""
+            }
+          />
+
           새로고침
         </button>
       </div>
 
-      {/* 통계 로딩 및 오류 */}
+      {/* ====================================
+          API 오류 안내
+      ==================================== */}
+
       {summaryError && (
-        <div className="admin-dashboard__error" role="alert">
-          상담 현황: {summaryError}
+        <div
+          className="admin-dashboard__error"
+          role="alert"
+        >
+          <CircleAlert
+            size={19}
+            strokeWidth={1.9}
+          />
+
+          <span>
+            상담 현황: {summaryError}
+          </span>
         </div>
       )}
+
+      {/* ====================================
+          상담 현황 통계
+      ==================================== */}
 
       <section
         className="admin-dashboard__stats"
         aria-label="상담 현황 통계"
         aria-busy={summaryLoading}
       >
-        <div className="admin-dashboard__stat-card">
-          <div className="admin-dashboard__stat-icon is-coral">
-            ▤
-          </div>
-
-          <div className="admin-dashboard__stat-text">
-            <p>신규 접수</p>
-            <small>공유 동의된 사건</small>
-          </div>
-
-          <strong>
-            {summaryLoading || summaryError
+        <StatCard
+          icon={ClipboardList}
+          color="is-coral"
+          title="신규 접수"
+          description="공유 동의된 사건"
+          value={
+            summaryError
               ? "-"
-              : summary.newCount}
-          </strong>
-        </div>
+              : summary.newCount
+          }
+          loading={summaryLoading}
+        />
 
-        <div className="admin-dashboard__stat-card">
-          <div className="admin-dashboard__stat-icon is-blue">
-            ◷
-          </div>
-
-          <div className="admin-dashboard__stat-text">
-            <p>진행 중</p>
-            <small>검토·자료 요청·연계</small>
-          </div>
-
-          <strong>
-            {summaryLoading || summaryError
+        <StatCard
+          icon={Clock3}
+          color="is-blue"
+          title="진행 중"
+          description="검토·자료 요청·연계"
+          value={
+            summaryError
               ? "-"
-              : summary.inProgressCount}
-          </strong>
-        </div>
+              : summary.inProgressCount
+          }
+          loading={summaryLoading}
+        />
 
-        <div className="admin-dashboard__stat-card">
-          <div className="admin-dashboard__stat-icon is-green">
-            ✓
-          </div>
-
-          <div className="admin-dashboard__stat-text">
-            <p>완료</p>
-            <small>처리 완료된 사건</small>
-          </div>
-
-          <strong>
-            {summaryLoading || summaryError
+        <StatCard
+          icon={CheckCircle2}
+          color="is-green"
+          title="완료"
+          description="처리 완료된 사건"
+          value={
+            summaryError
               ? "-"
-              : summary.closedCount}
-          </strong>
-        </div>
+              : summary.closedCount
+          }
+          loading={summaryLoading}
+        />
       </section>
 
-      {/* API에서 제공하는 추가 정보 */}
+      {/* ====================================
+          긴급 사건 / 미읽음 메시지
+      ==================================== */}
+
       {!summaryLoading && !summaryError && (
         <section className="admin-dashboard__alerts">
-          <div>
-            <span className="admin-dashboard__alert-dot is-urgent" />
-            우선 검토 대상
-            <strong>{summary.highUrgencyCount}건</strong>
-          </div>
+          <button
+            type="button"
+            className="admin-dashboard__alert-item is-urgent"
+            onClick={() => navigate("/cases?sort=urgency")}
+            aria-label={`우선 검토 대상 ${summary.highUrgencyCount}건, 긴급도순 사건 목록 보기`}
+          >
+            <span className="admin-dashboard__alert-icon">
+              <AlertTriangle
+                size={17}
+                strokeWidth={1.9}
+              />
+            </span>
 
-          <div>
-            <span className="admin-dashboard__alert-dot is-message" />
-            읽지 않은 메시지가 있는 사건
-            <strong>{summary.unreadMessageCount}건</strong>
-          </div>
+            <span>우선 검토 대상</span>
+
+            <strong>
+              {summary.highUrgencyCount}건
+            </strong>
+
+            <ChevronRight
+              size={17}
+              strokeWidth={1.8}
+              aria-hidden="true"
+            />
+          </button>
+
+          <button
+            type="button"
+            className="admin-dashboard__alert-item is-message"
+            onClick={() => navigate("/messages?focus=unread")}
+            aria-label={`읽지 않은 메시지가 있는 사건 ${summary.unreadMessageCount}건, 상담 메시지함 보기`}
+          >
+            <span className="admin-dashboard__alert-icon">
+              <MessageCircle
+                size={17}
+                strokeWidth={1.9}
+              />
+            </span>
+
+            <span>
+              읽지 않은 메시지가 있는 사건
+            </span>
+
+            <strong>
+              {summary.unreadMessageCount}건
+            </strong>
+
+            <ChevronRight
+              size={17}
+              strokeWidth={1.8}
+              aria-hidden="true"
+            />
+          </button>
         </section>
       )}
 
+      {/* ====================================
+          최근 상담 / 도넛 차트
+      ==================================== */}
+
       <section className="admin-dashboard__content">
         {/* 최근 상담 사건 */}
+
         <article className="admin-dashboard__panel">
           <div className="admin-dashboard__panel-header">
             <div>
               <span>최근 공유 동의 사건</span>
-              <h3>검토가 필요한 사건</h3>
+
+              <h3>
+                <ClipboardList
+                  size={22}
+                  strokeWidth={1.8}
+                />
+
+                검토가 필요한 사건
+              </h3>
             </div>
 
             <button
@@ -272,7 +455,11 @@ export default function AdminDashboard() {
               onClick={() => navigate("/cases")}
             >
               전체 보기
-              <span aria-hidden="true">›</span>
+
+              <ArrowRight
+                size={18}
+                strokeWidth={2}
+              />
             </button>
           </div>
 
@@ -281,17 +468,36 @@ export default function AdminDashboard() {
             aria-busy={casesLoading}
           >
             {casesLoading ? (
-              <p className="admin-dashboard__empty">
-                최근 사건을 불러오는 중입니다.
-              </p>
+              <div className="admin-dashboard__empty">
+                <LoaderCircle
+                  size={27}
+                  className="admin-dashboard__spin"
+                />
+
+                <p>
+                  최근 사건을 불러오는 중입니다.
+                </p>
+              </div>
             ) : casesError ? (
-              <p className="admin-dashboard__empty" role="alert">
-                {casesError}
-              </p>
+              <div
+                className="admin-dashboard__empty"
+                role="alert"
+              >
+                <CircleAlert size={27} />
+
+                <p>{casesError}</p>
+              </div>
             ) : consultations.length === 0 ? (
-              <p className="admin-dashboard__empty">
-                접수된 상담 사건이 없습니다.
-              </p>
+              <div className="admin-dashboard__empty">
+                <Inbox
+                  size={30}
+                  strokeWidth={1.6}
+                />
+
+                <p>
+                  접수된 상담 사건이 없습니다.
+                </p>
+              </div>
             ) : (
               consultations.map((item) => {
                 const priority =
@@ -300,7 +506,9 @@ export default function AdminDashboard() {
 
                 const isSuggested =
                   !item.urgencyLevel &&
-                  Boolean(item.aiSuggestedUrgency);
+                  Boolean(
+                    item.aiSuggestedUrgency
+                  );
 
                 return (
                   <button
@@ -309,42 +517,64 @@ export default function AdminDashboard() {
                     className="admin-dashboard__case"
                     onClick={() =>
                       navigate(
-                        `/cases/${encodeURIComponent(item.id)}`
+                        `/cases/${encodeURIComponent(
+                          item.id
+                        )}`
                       )
                     }
                   >
                     <div className="admin-dashboard__case-info">
-                      <strong>{item.workerName || "이름 없음"}</strong>
+                      <strong>
+                        {item.workerName ||
+                          "이름 없음"}
+                      </strong>
+
                       <span>{item.id}</span>
-                      <small>{formatDate(item.receivedAt)}</small>
+
+                      <small>
+                        {formatDate(
+                          item.receivedAt
+                        )}
+                      </small>
                     </div>
 
                     <div className="admin-dashboard__case-amount">
                       <span>확인 필요 차이</span>
+
                       <strong>
-                        {formatWon(item.differenceAmount)}
+                        {formatWon(
+                          item.differenceAmount
+                        )}
                       </strong>
                     </div>
 
                     <span
                       className={
                         `admin-dashboard__priority ` +
-                        `priority-${(priority || "none").toLowerCase()}`
+                        `priority-${(
+                          priority || "none"
+                        ).toLowerCase()}`
                       }
                     >
                       {priority
-                        ? `${URGENCY_LABELS[priority] || priority}${
-                            isSuggested ? " (AI)" : ""
+                        ? `${
+                            URGENCY_LABELS[
+                              priority
+                            ] || priority
+                          }${
+                            isSuggested
+                              ? " (AI)"
+                              : ""
                           }`
                         : "미분류"}
                     </span>
 
-                    <span
+                    <ChevronRight
                       className="admin-dashboard__case-arrow"
+                      size={19}
+                      strokeWidth={1.8}
                       aria-hidden="true"
-                    >
-                      ›
-                    </span>
+                    />
                   </button>
                 );
               })
@@ -353,23 +583,43 @@ export default function AdminDashboard() {
         </article>
 
         {/* 상태별 사건 차트 */}
+
         <article className="admin-dashboard__panel">
           <div className="admin-dashboard__panel-header">
             <div>
               <span>처리 현황</span>
-              <h3>상태별 사건</h3>
+
+              <h3>
+                <ChartPie
+                  size={22}
+                  strokeWidth={1.8}
+                />
+
+                상태별 사건
+              </h3>
             </div>
           </div>
 
           <div className="admin-dashboard__chart-area">
             {summaryLoading ? (
-              <p className="admin-dashboard__empty">
-                통계를 불러오는 중입니다.
-              </p>
+              <div className="admin-dashboard__empty">
+                <LoaderCircle
+                  size={27}
+                  className="admin-dashboard__spin"
+                />
+
+                <p>
+                  통계를 불러오는 중입니다.
+                </p>
+              </div>
             ) : summaryError ? (
-              <p className="admin-dashboard__empty">
-                통계를 표시할 수 없습니다.
-              </p>
+              <div className="admin-dashboard__empty">
+                <CircleAlert size={27} />
+
+                <p>
+                  통계를 표시할 수 없습니다.
+                </p>
+              </div>
             ) : (
               <>
                 <div
@@ -393,19 +643,25 @@ export default function AdminDashboard() {
                   <div>
                     <span className="dot is-coral" />
                     접수
-                    <strong>{summary.newCount}</strong>
+                    <strong>
+                      {summary.newCount}
+                    </strong>
                   </div>
 
                   <div>
                     <span className="dot is-blue" />
                     진행 중
-                    <strong>{summary.inProgressCount}</strong>
+                    <strong>
+                      {summary.inProgressCount}
+                    </strong>
                   </div>
 
                   <div>
                     <span className="dot is-green" />
                     완료
-                    <strong>{summary.closedCount}</strong>
+                    <strong>
+                      {summary.closedCount}
+                    </strong>
                   </div>
                 </div>
               </>
@@ -414,10 +670,23 @@ export default function AdminDashboard() {
         </article>
       </section>
 
+      {/* ====================================
+          정보 공유 원칙
+      ==================================== */}
+
       <div className="admin-dashboard__notice">
-        <span aria-hidden="true">♢</span>
+        <div className="admin-dashboard__notice-icon">
+          <ShieldCheck
+            size={26}
+            strokeWidth={1.8}
+          />
+        </div>
+
         <div>
-          <strong>정보 공유 원칙</strong>
+          <strong>
+            정보 공유 원칙
+          </strong>
+
           <p>
             노동자가 명시적으로 공유에 동의한 사건만
             표시됩니다. 미동의 자료는 조회할 수 없습니다.

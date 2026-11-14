@@ -1,322 +1,526 @@
 
-/* 관리자 사건 목록 페이지 */
+/* ========================================
+   AdminCases.css
+   가로형 목록 / 가로 스크롤 없음
+======================================== */
 
 .admin-cases {
     width: 100%;
+    max-width: 1540px;
     min-width: 0;
-    color: #2D2928;
+    margin: 0 auto;
+    color: #2d2928;
   }
   
-  .admin-cases__heading {
+  .admin-cases *,
+  .admin-cases *::before,
+  .admin-cases *::after {
+    box-sizing: border-box;
+  }
+  
+  /* ========================================
+     상단 헤더
+  ======================================== */
+  
+  .admin-cases__header {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: wrap;
     gap: 20px;
-    margin-bottom: 28px;
+    margin-bottom: 34px;
   }
   
-  .admin-cases__heading > div > span {
+  .admin-cases__eyebrow {
+    margin: 0 0 13px;
+    color: #918680;
     font-size: 14px;
-    color: #908680;
   }
   
-  .admin-cases__heading h2 {
-    font-size: 30px;
-    font-weight: 700;
-    margin: 8px 0 10px;
-    letter-spacing: -1px;
-  }
-  
-  .admin-cases__heading p {
+  .admin-cases__header h1 {
     margin: 0;
+    font-size: 34px;
+    font-weight: 750;
+    letter-spacing: -1.2px;
+  }
+  
+  .admin-cases__description {
+    margin: 13px 0 0;
+    color: #9a8d86;
     font-size: 14px;
-    color: #978D87;
+    line-height: 1.6;
   }
   
   .admin-cases__refresh {
-    padding: 12px 18px;
-    background: #FFFFFF;
-    border: 1px solid #E8E1DD;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 13px 17px;
+    border: 1px solid #e8dfda;
     border-radius: 12px;
-    color: #675D57;
+    background: #fff;
+    color: #685d56;
+    font: inherit;
+    font-size: 14px;
     cursor: pointer;
-    white-space: nowrap;
   }
   
-  .admin-cases__refresh:hover {
-    background: #FFF7F2;
+  .admin-cases__refresh:hover:not(:disabled) {
+    background: #fff5f0;
   }
   
   .admin-cases__refresh:disabled {
-    opacity: 0.5;
-    cursor: wait;
+    opacity: 0.55;
+    cursor: not-allowed;
   }
   
-  /* 필터 */
+  /* ========================================
+     필터 영역
+  ======================================== */
   
   .admin-cases__toolbar {
     display: flex;
-    align-items: center;
+    align-items: end;
     justify-content: space-between;
-    gap: 20px;
-    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 18px;
+    margin-bottom: 25px;
   }
   
   .admin-cases__total {
     display: flex;
     align-items: center;
     gap: 7px;
+    color: #7f756e;
     font-size: 15px;
-    color: #776B65;
   }
   
   .admin-cases__total strong {
+    color: #f56b4a;
     font-size: 23px;
-    color: #F56B4A;
+    font-weight: 800;
   }
   
   .admin-cases__filters {
     display: flex;
-    gap: 12px;
+    align-items: end;
+    flex-wrap: wrap;
+    gap: 13px;
   }
   
-  .admin-cases__filters label {
+  .admin-cases__filter {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 9px;
   }
   
-  .admin-cases__filters label > span {
-    color: #8C817C;
+  .admin-cases__filter > span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #8c8078;
     font-size: 12px;
   }
   
-  .admin-cases__filters select {
-    min-width: 145px;
-    height: 44px;
-    padding: 0 14px;
+  .admin-cases__filter > span svg {
+    color: #b0806d;
+  }
+  
+  .admin-cases__filter select {
+    width: 167px;
+    max-width: 100%;
+    min-height: 47px;
+    padding: 0 15px;
+    border: 1px solid #e6ded8;
     border-radius: 11px;
-    border: 1px solid #E5DDD8;
-    background: #FFFFFF;
-    color: #292524;
-    font-size: 14px;
+    background: #fff;
+    color: #453b34;
+    font: inherit;
+    font-size: 13px;
     cursor: pointer;
   }
   
-  .admin-cases__filters select:focus {
-    outline: 2px solid #F56B4A;
-    outline-offset: 2px;
+  .admin-cases__filter select:focus-visible {
+    outline: 2px solid #f56b4a;
   }
   
-  /* 사건 테이블 */
+  /* ========================================
+     테이블 컨테이너
+  ======================================== */
   
-  .admin-cases__table-card {
-    background: #FFFFFF;
-    border: 1px solid #E9E3DF;
-    border-radius: 22px;
+  .admin-cases__list {
+    width: 100%;
+    min-width: 0;
+  
+    border: 1px solid #eae3dd;
+    border-radius: 19px;
+    background: #fff;
+  
+    /* 내부 스크롤을 만들지 않음 */
     overflow: hidden;
-    box-shadow: 0 7px 24px rgba(45, 41, 40, 0.03);
+  
+    box-shadow:
+      0 8px 25px rgba(45, 41, 40, 0.025);
   }
   
-  .admin-cases__table-scroll {
+  /*
+   * 핵심:
+   * 1. 모든 컬럼에 minmax(0, ...) 사용
+   * 2. min-width: 1200px 같은 고정 너비 없음
+   * 3. 헤더와 행에 동일한 grid-template 사용
+   * 4. flex보다 grid를 사용해 열 위치 통일
+   */
+  
+  .admin-cases__table-head,
+  .admin-cases__row {
+    display: grid;
+  
+    grid-template-columns:
+      minmax(0, 2.3fr)
+      minmax(0, 0.8fr)
+      minmax(0, 1.12fr)
+      minmax(0, 1fr)
+      minmax(0, 0.95fr)
+      minmax(0, 0.85fr)
+      minmax(0, 1.42fr)
+      minmax(0, 0.5fr);
+  
+    align-items: center;
+    column-gap: 10px;
+  
     width: 100%;
-    overflow-x: auto;
+    min-width: 0;
   }
   
-  .admin-cases__table {
-    width: 100%;
-    min-width: 1080px;
-    border-collapse: collapse;
-    text-align: left;
+  /* ========================================
+     테이블 헤더
+  ======================================== */
+  
+  .admin-cases__table-head {
+    min-height: 67px;
+    padding: 18px 20px;
+  
+    border-bottom: 1px solid #eae4df;
+    background: #faf8f6;
   }
   
-  .admin-cases__table thead {
-    background: #FBF8F6;
-  }
+  .admin-cases__table-head > span {
+    min-width: 0;
   
-  .admin-cases__table th {
-    padding: 20px 18px;
-    color: #82766F;
-    font-size: 13px;
-    font-weight: 600;
-    border-bottom: 1px solid #EEE8E4;
+    color: #897e77;
+    font-size: 12px;
+    font-weight: 750;
+  
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   
-  .admin-cases__table td {
-    padding: 22px 18px;
-    font-size: 13px;
-    border-bottom: 1px solid #F0EBE7;
-    vertical-align: middle;
+  .admin-cases__table-head > span:last-child {
+    text-align: right;
   }
   
-  .admin-cases__table tbody tr:last-child td {
+  /* ========================================
+     사건 목록
+  ======================================== */
+  
+  .admin-cases__rows {
+    width: 100%;
+    min-width: 0;
+  }
+  
+  /* 각 사건은 가로 한 줄 */
+  
+  .admin-cases__row {
+    min-height: 108px;
+    padding: 19px 20px;
+  
+    border: 0;
+    border-bottom: 1px solid #eee8e3;
+  
+    background: #fff;
+    color: #2d2928;
+  
+    text-align: left;
+    font: inherit;
+    cursor: pointer;
+  
+    transition: background 0.2s;
+  }
+  
+  .admin-cases__row:last-child {
     border-bottom: 0;
   }
   
-  .admin-cases__table tbody tr:hover {
-    background: #FFFBF8;
+  .admin-cases__row:hover {
+    background: #fffaf7;
   }
+  
+  .admin-cases__row:focus-visible {
+    outline: 2px solid #f56b4a;
+    outline-offset: -3px;
+  }
+  
+  /* 각 열의 최소 너비 제한 제거 */
+  
+  .admin-cases__row > div {
+    min-width: 0;
+  }
+  
+  /* ========================================
+     사건 정보
+  ======================================== */
   
   .admin-cases__case-info {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 7px;
-    max-width: 250px;
+    min-width: 0;
   }
   
-  .admin-cases__case-info strong {
-    font-size: 14px;
-    color: #2D2928;
-  }
-  
-  .admin-cases__case-info > span:nth-child(2) {
-    color: #82766F;
-    line-height: 1.5;
-  }
-  
-  .admin-cases__new-message {
-    display: inline-flex;
-    padding: 5px 9px;
-    border-radius: 20px;
-    background: #EDF2FF;
-    color: #4D65C7;
-    font-size: 11px;
-    font-weight: 600;
-  }
-  
-  .admin-cases__worker strong,
-  .admin-cases__worker span {
+  .admin-cases__case-info > strong {
     display: block;
-  }
+    max-width: 100%;
   
-  .admin-cases__worker strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  
+    color: #302b28;
     font-size: 14px;
+    font-weight: 800;
   }
   
-  .admin-cases__worker span {
-    margin-top: 7px;
-    color: #998D87;
+  .admin-cases__case-info > span:not(
+    .admin-cases__unread
+  ) {
+    display: block;
+    max-width: 100%;
+    margin-top: 8px;
+  
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  
+    color: #8e837c;
     font-size: 12px;
   }
   
-  .admin-cases__amount {
-    font-weight: 700;
-    white-space: nowrap;
-  }
+  /* 미읽음 메시지 */
   
-  .admin-cases__urgency,
-  .admin-cases__status {
+  .admin-cases__unread {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    padding: 9px 11px;
-    border-radius: 30px;
-    white-space: nowrap;
-    font-size: 12px;
-    font-weight: 700;
-  }
   
-  .admin-cases__urgency small {
+    width: fit-content;
+    max-width: 100%;
+    margin-top: 8px;
+    padding: 5px 8px;
+  
+    border-radius: 20px;
+    background: #edf1ff;
+    color: #526ad9;
+  
     font-size: 10px;
-    font-weight: 500;
-  }
-  
-  .admin-cases__urgency.urgency-high {
-    background: #FFF0EF;
-    color: #C9443B;
-  }
-  
-  .admin-cases__urgency.urgency-medium {
-    background: #FFF7E5;
-    color: #AB7122;
-  }
-  
-  .admin-cases__urgency.urgency-low {
-    background: #EFF8F0;
-    color: #43814B;
-  }
-  
-  .admin-cases__urgency.urgency-none {
-    background: #F1F1F1;
-    color: #777777;
-  }
-  
-  .admin-cases__status.status-received {
-    background: #FFF0EA;
-    color: #C76849;
-  }
-  
-  .admin-cases__status.status-reviewing {
-    background: #EDF2FF;
-    color: #4D64C5;
-  }
-  
-  .admin-cases__status.status-info_requested {
-    background: #FFF8E8;
-    color: #A97A20;
-  }
-  
-  .admin-cases__status.status-referred {
-    background: #F1EDFC;
-    color: #7855BD;
-  }
-  
-  .admin-cases__status.status-closed {
-    background: #EFF8F0;
-    color: #43814B;
-  }
-  
-  .admin-cases__date {
+    font-weight: 750;
     white-space: nowrap;
-    color: #81766F;
   }
   
-  .admin-cases__detail-button {
-    border: 0;
-    background: transparent;
-    color: #B44B33;
+  .admin-cases__unread svg {
+    flex-shrink: 0;
+  }
+  
+  /* ========================================
+     노동자
+  ======================================== */
+  
+  .admin-cases__worker strong {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  
     font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
+    font-weight: 750;
+  }
+  
+  .admin-cases__worker small {
+    display: block;
+    margin-top: 7px;
+  
+    color: #a19891;
+    font-size: 11px;
+  }
+  
+  /* ========================================
+     임금 차이
+  ======================================== */
+  
+  .admin-cases__amount strong {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  
+    color: #302b28;
+    font-size: 12px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+  
+  /* ========================================
+     긴급도 / 처리 상태
+  ======================================== */
+  
+  .admin-cases__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  
+    width: fit-content;
+    max-width: 100%;
+    padding: 8px 10px;
+  
+    border-radius: 22px;
+  
+    font-size: 11px;
+    font-weight: 750;
+    line-height: 1.35;
+  
+    white-space: normal;
+    text-align: center;
+    overflow-wrap: anywhere;
+  }
+  
+  .admin-cases__badge small {
+    font-size: 10px;
+    font-weight: 650;
+  }
+  
+  /* 긴급도 */
+  
+  .admin-cases__badge.urgency-high {
+    background: #fff0ef;
+    color: #bd4941;
+  }
+  
+  .admin-cases__badge.urgency-medium {
+    background: #fff7e5;
+    color: #a47723;
+  }
+  
+  .admin-cases__badge.urgency-low {
+    background: #f0f8f0;
+    color: #438451;
+  }
+  
+  .admin-cases__badge.urgency-none {
+    background: #f3f1ef;
+    color: #77706a;
+  }
+  
+  /* 처리 상태 */
+  
+  .admin-cases__badge.status-received {
+    background: #fff0e9;
+    color: #c45f42;
+  }
+  
+  .admin-cases__badge.status-reviewing {
+    background: #eff2ff;
+    color: #5268cc;
+  }
+  
+  .admin-cases__badge.status-info_requested {
+    background: #fff8e9;
+    color: #a77a29;
+  }
+  
+  .admin-cases__badge.status-referred {
+    background: #f3edfc;
+    color: #7851ac;
+  }
+  
+  .admin-cases__badge.status-closed {
+    background: #eef8ef;
+    color: #468455;
+  }
+  
+  .admin-cases__badge.status-none {
+    background: #f3f1ef;
+    color: #77706a;
+  }
+  
+  /* ========================================
+     담당자 / 접수 일시
+  ======================================== */
+  
+  .admin-cases__assignee span {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  
+    color: #655b55;
+    font-size: 12px;
+  }
+  
+  .admin-cases__date span {
+    display: block;
+    color: #776c65;
+    font-size: 11px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+  
+  /* ========================================
+     상세 버튼
+  ======================================== */
+  
+  .admin-cases__open {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1px;
+  
+    min-width: 0;
+  
+    color: #bc593e;
+    font-size: 12px;
+    font-weight: 800;
     white-space: nowrap;
   }
   
-  .admin-cases__detail-button:hover {
-    text-decoration: underline;
+  .admin-cases__open svg {
+    flex-shrink: 0;
+    transition: transform 0.2s;
   }
   
-  .admin-cases__empty {
-    padding: 55px 20px !important;
-    text-align: center;
-    color: #8B817D;
+  .admin-cases__row:hover
+  .admin-cases__open svg {
+    transform: translateX(3px);
   }
   
-  .admin-cases__empty p {
-    color: #BC4540;
-  }
-  
-  .admin-cases__empty button {
-    margin-top: 10px;
-    border: 1px solid #E6D9D3;
-    padding: 9px 15px;
-    background: white;
-    border-radius: 9px;
-    cursor: pointer;
-  }
-  
-  /* 페이지 이동 */
+  /* ========================================
+     페이지네이션
+  ======================================== */
   
   .admin-cases__pagination {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
     gap: 15px;
-    padding: 20px 24px;
-    border-top: 1px solid #EEE8E4;
-    color: #8E837D;
-    font-size: 13px;
+  
+    padding: 19px 24px;
+  
+    border-top: 1px solid #eee8e3;
+    background: #fff;
+  }
+  
+  .admin-cases__pagination > span {
+    color: #978b83;
+    font-size: 12px;
   }
   
   .admin-cases__pagination > div {
@@ -325,17 +529,21 @@
   }
   
   .admin-cases__pagination button {
-    padding: 10px 16px;
-    border: 1px solid #E6DFDB;
-    border-radius: 9px;
-    background: #FFFFFF;
-    color: #514842;
-    cursor: pointer;
-  }
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
   
-  .admin-cases__pagination button:hover:not(:disabled) {
-    background: #FFF4EF;
-    color: #B44B33;
+    padding: 10px 13px;
+  
+    border: 1px solid #e7dfda;
+    border-radius: 10px;
+  
+    background: #fff;
+    color: #6b5f58;
+  
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
   }
   
   .admin-cases__pagination button:disabled {
@@ -343,55 +551,384 @@
     cursor: not-allowed;
   }
   
-  /* 하단 안내 */
+  .admin-cases__pagination button:hover:not(:disabled) {
+    border-color: #f56b4a;
+    color: #d35e40;
+  }
+  
+  /* ========================================
+     로딩 / 빈 상태 / 오류
+  ======================================== */
+  
+  .admin-cases__empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+  
+    min-height: 210px;
+    padding: 30px;
+  
+    color: #9d8f86;
+    text-align: center;
+  }
+  
+  .admin-cases__empty p {
+    margin: 0;
+    font-size: 13px;
+  }
+  
+  .admin-cases__error {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+  
+    margin-bottom: 17px;
+    padding: 15px 17px;
+  
+    border: 1px solid #f1d4cc;
+    border-radius: 12px;
+  
+    background: #fff0ed;
+    color: #a84438;
+    font-size: 13px;
+  }
+  
+  .admin-cases__error button {
+    margin-left: auto;
+    border: 0;
+    background: transparent;
+    color: inherit;
+  
+    font: inherit;
+    font-weight: 800;
+    text-decoration: underline;
+    cursor: pointer;
+  }
   
   .admin-cases__notice {
-    margin-top: 24px;
-    padding: 24px 30px;
-    background: #FFFBF7;
-    border: 1px solid #ECE5DE;
-    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  
+    margin-top: 19px;
+  
+    color: #95847b;
+    font-size: 12px;
+    line-height: 1.6;
   }
   
-  .admin-cases__notice strong {
-    font-size: 14px;
-    color: #9D5A38;
+  .admin-cases__notice svg {
+    flex-shrink: 0;
+    color: #d17758;
   }
   
-  .admin-cases__notice p {
-    margin: 8px 0 0;
-    font-size: 13px;
-    color: #8C817B;
-    line-height: 1.7;
+  .admin-cases__spin {
+    animation: admin-cases-spin 0.8s linear infinite;
   }
   
-  /* 반응형 */
-  
-  @media (max-width: 850px) {
-    .admin-cases__heading,
-    .admin-cases__toolbar {
-      align-items: flex-start;
-      flex-direction: column;
+  @keyframes admin-cases-spin {
+    to {
+      transform: rotate(360deg);
     }
   }
   
-  @media (max-width: 560px) {
+  /* ========================================
+     반응형
+     카드형으로 변경하지 않음
+  ======================================== */
+  
+  /*
+   * 사이드바가 있는 상황에서 화면이 좁아지면
+   * 먼저 접수 일시 열을 숨긴다.
+   * 사건 상세 화면에서는 여전히 확인 가능하다.
+   */
+  
+  @media (max-width: 1280px) {
+    .admin-cases__table-head,
+    .admin-cases__row {
+      grid-template-columns:
+        minmax(0, 2.2fr)
+        minmax(0, 0.85fr)
+        minmax(0, 1.15fr)
+        minmax(0, 1.05fr)
+        minmax(0, 1fr)
+        minmax(0, 0.85fr)
+        minmax(0, 0.48fr);
+    }
+  
+    .admin-cases__table-head > span:nth-child(7),
+    .admin-cases__date {
+      display: none;
+    }
+  }
+  
+  /* 태블릿에서는 담당자 열도 숨김 */
+  
+  @media (max-width: 950px) {
+    .admin-cases__table-head,
+    .admin-cases__row {
+      grid-template-columns:
+        minmax(0, 2.1fr)
+        minmax(0, 0.8fr)
+        minmax(0, 1.15fr)
+        minmax(0, 0.95fr)
+        minmax(0, 1fr)
+        minmax(0, 0.45fr);
+      column-gap: 7px;
+    }
+  
+    .admin-cases__table-head > span:nth-child(6),
+    .admin-cases__assignee {
+      display: none;
+    }
+  
+    .admin-cases__table-head,
+    .admin-cases__row {
+      padding-left: 13px;
+      padding-right: 13px;
+    }
+  
+    .admin-cases__badge {
+      padding: 7px 6px;
+      font-size: 10px;
+    }
+  }
+  
+  /* 모바일에서도 한 줄 목록 유지 */
+  
+  @media (max-width: 700px) {
+    .admin-cases__header h1 {
+      font-size: 27px;
+    }
+  
+    .admin-cases__toolbar {
+      align-items: stretch;
+    }
+  
     .admin-cases__filters {
       width: 100%;
-      flex-direction: column;
     }
   
-    .admin-cases__filters label {
+    .admin-cases__filter {
+      flex: 1;
+      min-width: 0;
+    }
+  
+    .admin-cases__filter select {
       width: 100%;
     }
   
-    .admin-cases__filters select {
+    /*
+     * 모바일에서는 사건 정보, 노동자,
+     * 처리 상태, 상세만 보여준다.
+     * 나머지 정보는 사건 상세에서 조회한다.
+     */
+  
+    .admin-cases__table-head,
+    .admin-cases__row {
+      grid-template-columns:
+        minmax(0, 2fr)
+        minmax(0, 0.9fr)
+        minmax(0, 0.9fr)
+        minmax(0, 0.45fr);
+      column-gap: 7px;
+    }
+  
+    .admin-cases__table-head > span:nth-child(3),
+    .admin-cases__table-head > span:nth-child(4),
+    .admin-cases__amount,
+    .admin-cases__urgency {
+      display: none;
+    }
+  
+    .admin-cases__row {
+      min-height: 90px;
+    }
+  
+    .admin-cases__pagination {
+      padding: 15px;
+    }
+  
+    .admin-cases__case-info > strong {
+      font-size: 12px;
+    }
+  
+    .admin-cases__case-info > span:not(
+      .admin-cases__unread
+    ) {
+      font-size: 11px;
+    }
+  }
+  
+  @media (max-width: 430px) {
+    .admin-cases__filters {
+      flex-direction: column;
+    }
+  
+    .admin-cases__filter {
       width: 100%;
     }
   
     .admin-cases__pagination {
-      align-items: flex-start;
       flex-direction: column;
+      align-items: stretch;
+    }
+  
+    .admin-cases__pagination > div {
+      justify-content: space-between;
+    }
+  }
+  
+
+/* ========================================
+   우선 검토 대상 강조
+======================================== */
+
+/* 우선 검토 대상 행 */
+
+.admin-cases__row.is-priority {
+    position: relative;
+    background: #fff9f8;
+  }
+  
+  .admin-cases__row.is-priority::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: #dc4444;
+  }
+  
+  .admin-cases__row.is-priority:hover {
+    background: #fff0ee;
+  }
+  
+  /* 사건 ID 앞의 빨간 점 */
+  
+  .admin-cases__priority-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 8px;
+    border-radius: 50%;
+    background: #dc4444;
+    vertical-align: 1px;
+    box-shadow:
+      0 0 0 3px rgba(220, 68, 68, 0.11);
+  }
+  
+
+/* ========================================
+   우선 검토 대상 배지 개선
+======================================== */
+
+
+/* 우선 검토 대상 배지 - 가로 정렬 고정 */
+
+.admin-cases__case-info .admin-cases__priority-label {
+    display: inline-flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    flex-wrap: nowrap !important;
+  
+    gap: 9px !important;
+  
+    width: max-content;
+    max-width: 100%;
+    margin-top: 9px;
+    padding: 8px 13px;
+  
+    border-radius: 999px;
+    background: #fceeed;
+    color: #a15b53;
+  
+    white-space: nowrap !important;
+    line-height: 1;
+    vertical-align: middle;
+  }
+  
+  /* 아이콘 */
+  
+  .admin-cases__case-info
+  .admin-cases__priority-label > svg {
+    display: block;
+    flex: 0 0 14px;
+    width: 14px;
+    height: 14px;
+  }
+  
+  /* 텍스트 - 부모 span 스타일 충돌 방지 */
+  
+  .admin-cases__case-info
+  .admin-cases__priority-label
+  .admin-cases__priority-label-text {
+    display: inline-block !important;
+    flex: 0 0 auto;
+  
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+  
+    color: inherit !important;
+    font-size: 11px !important;
+    font-weight: 700;
+    line-height: 14px !important;
+    white-space: nowrap !important;
+  
+    overflow: visible !important;
+    text-overflow: clip !important;
+  }
+  
+  
+  
+  /* 상단 긴급도순 안내 */
+  
+  .admin-cases__priority-summary {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+  
+    margin-bottom: 17px;
+    padding: 17px 19px;
+  
+    border: 1px solid #f5d3cf;
+    border-radius: 13px;
+  
+    background: #fff8f7;
+    color: #c44640;
+  }
+  
+  .admin-cases__priority-summary > svg {
+    flex-shrink: 0;
+  }
+  
+  .admin-cases__priority-summary > div {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+  }
+  
+  .admin-cases__priority-summary strong {
+    font-size: 13px;
+    font-weight: 800;
+  }
+  
+  .admin-cases__priority-summary span {
+    color: #936e6b;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  
+  @media (max-width: 700px) {
+    .admin-cases__priority-summary {
+      align-items: flex-start;
+      padding: 14px;
     }
   }
   
