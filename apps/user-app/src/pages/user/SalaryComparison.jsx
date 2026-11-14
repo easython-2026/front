@@ -288,8 +288,10 @@ export default function SalaryComparison() {
                   "REQUEST_CONSULTATION"
                 ) && (
                   <p>
-                    <Link to="/consultations/new">
-                      상담 신청 화면으로 이동
+                    <Link
+                        to={`/consultations/new?comparisonId=${encodeURIComponent(comparisonId)}`}
+                    >
+                    노동 상담 신청하기
                     </Link>
                   </p>
                 )}
