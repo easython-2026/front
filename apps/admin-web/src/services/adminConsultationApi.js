@@ -498,3 +498,126 @@ export async function createAdminInfoRequest(
     );
   }
   
+
+/**
+ * 관리자 전문가 연계 기록
+ *
+ * POST /api/v1/admin/consultations/{consultationId}/referrals
+ *
+ * Request:
+ * {
+ *   type: "LABOR_ATTORNEY" | "INTERPRETER",
+ *   organization: string,
+ *   contact?: string,
+ *   note?: string
+ * }
+ *
+ * Response data:
+ * {
+ *   id: string,
+ *   status: "REFERRED",
+ *   createdAt: string
+ * }
+ */
+export async function createAdminReferral(
+    consultationId,
+    {
+      type,
+      organization,
+      contact = "",
+      note = "",
+    }
+  ) {
+    // 기본 입력 검증
+    if (!consultationId) {
+      throw apiError("상담 사건 ID가 필요합니다.");
+    }
+  
+    const validTypes = [
+      "LABOR_ATTORNEY",
+      "INTERPRETER",
+    ];
+  
+    if (!validTypes.includes(type)) {
+      throw apiError("연계 유형을 선택해 주세요.");
+    }
+  
+    const trimmedOrganization = organization?.trim();
+  
+    if (!trimmedOrganization) {
+      throw apiError(
+        "연계 기관 또는 전문가명을 입력해 주세요."
+      );
+    }
+  
+    // API 명세에 따른 요청 Body
+    const body = {
+      type,
+      organization: trimmedOrganization,
+    };
+  
+    if (contact.trim()) {
+      body.contact = contact.trim();
+    }
+  
+    if (note.trim()) {
+      body.note = note.trim();
+    }
+  
+    // ========================================
+    // Mock 모드
+    // ========================================
+    if (USE_MOCK) {
+      const detail = getMockCase(consultationId);
+  
+      if (detail.status === "CLOSED") {
+        throw apiError(
+          "종결된 사건에는 전문가 연계를 추가할 수 없습니다.",
+          409,
+          "CONFLICT"
+        );
+      }
+  
+      const createdAt = new Date().toISOString();
+  
+      const referral = {
+        id: crypto.randomUUID(),
+        ...body,
+        createdAt,
+      };
+  
+      if (!Array.isArray(detail.referrals)) {
+        detail.referrals = [];
+      }
+  
+      detail.referrals.push(referral);
+  
+      // API 명세에 따라 사건 상태 변경
+      detail.status = "REFERRED";
+  
+      // Mock 사건 목록에도 변경사항 반영
+      updateMockCase(consultationId, {
+        status: "REFERRED",
+      });
+  
+      return {
+        id: referral.id,
+        status: "REFERRED",
+        createdAt,
+      };
+    }
+  
+    // ========================================
+    // 실제 백엔드 API 호출
+    // ========================================
+    return adminApi(
+      `/api/v1/admin/consultations/${encodeURIComponent(
+        consultationId
+      )}/referrals`,
+      {
+        method: "POST",
+        body: JSON.stringify(body),
+      }
+    );
+  }
+  

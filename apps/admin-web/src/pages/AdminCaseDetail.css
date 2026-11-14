@@ -1,206 +1,308 @@
 
-/* 관리자 사건 상세 */
+/* 관리자 사건 상세 - 탭 기반 레이아웃 */
 
 .admin-detail {
     width: 100%;
     min-width: 0;
-    color: #2D2928;
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 28px 30px 45px;
+    color: #2d2928;
+    box-sizing: border-box;
   }
+  
+  .admin-detail *,
+  .admin-detail *::before,
+  .admin-detail *::after {
+    box-sizing: border-box;
+  }
+  
+  /* 헤더 */
   
   .admin-detail__top {
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
     gap: 20px;
-    margin-bottom: 26px;
+    margin-bottom: 22px;
   }
   
   .admin-detail__back {
-    border: 0;
-    background: transparent;
-    color: #8D756C;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
     padding: 0;
-    margin-bottom: 24px;
-    font-size: 14px;
+    margin-bottom: 17px;
+    background: none;
+    border: 0;
+    color: #88776e;
+    font-size: 13px;
     cursor: pointer;
   }
   
   .admin-detail__back:hover {
-    color: #F56B4A;
+    color: #f56b4a;
   }
   
   .admin-detail__eyebrow {
-    margin: 0 0 8px;
-    color: #938781;
-    font-size: 14px;
+    margin: 0 0 7px;
+    color: #b7674c;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    font-weight: 800;
   }
   
   .admin-detail__top h2 {
     margin: 0;
-    font-size: 30px;
-    letter-spacing: -1px;
+    font-size: clamp(20px, 2vw, 29px);
+    letter-spacing: -0.7px;
     overflow-wrap: anywhere;
   }
   
   .admin-detail__top-actions {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 11px;
+    flex-wrap: wrap;
   }
   
   .admin-detail__status {
     display: inline-flex;
-    padding: 10px 14px;
-    border-radius: 24px;
-    background: #F1F1F1;
-    color: #706963;
-    font-size: 13px;
+    align-items: center;
+    padding: 9px 12px;
+    border-radius: 20px;
+    background: #f2f2f2;
+    color: #746b65;
+    font-size: 12px;
     font-weight: 700;
   }
   
   .admin-detail__status.status-received {
-    background: #FFF0EA;
-    color: #BB593D;
+    color: #b3593f;
+    background: #fff0e9;
   }
   
   .admin-detail__status.status-reviewing {
-    background: #EDF2FF;
-    color: #4D64C5;
+    color: #4d64c5;
+    background: #edf2ff;
   }
   
   .admin-detail__status.status-info_requested {
-    background: #FFF8E8;
-    color: #A97A20;
+    color: #a97a20;
+    background: #fff8e8;
   }
   
   .admin-detail__status.status-referred {
-    background: #F1EDFC;
-    color: #7855BD;
+    color: #7855bd;
+    background: #f1edfc;
   }
   
   .admin-detail__status.status-closed {
-    background: #EFF8F0;
-    color: #43814B;
+    color: #43814b;
+    background: #eff8f0;
   }
   
   .admin-detail__refresh {
-    padding: 11px 16px;
-    background: #FFFFFF;
-    border: 1px solid #E7DFD9;
-    border-radius: 11px;
-    color: #62544D;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 14px;
+    background: #fff;
+    border: 1px solid #e7dfd9;
+    border-radius: 10px;
+    color: #62544d;
     cursor: pointer;
   }
   
-  /* 기본 정보 카드 */
+  .admin-detail__refresh:hover {
+    border-color: #f56b4a;
+  }
+  
+  /* 기본 정보 */
   
   .admin-detail__overview {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 18px;
-    margin-bottom: 24px;
+    gap: 14px;
+    margin-bottom: 22px;
   }
   
   .admin-detail__overview > div {
     min-width: 0;
-    background: #FFFFFF;
-    border: 1px solid #EAE4DF;
-    border-radius: 20px;
-    padding: 23px 25px;
-  }
-  
-  .admin-detail__overview span,
-  .admin-detail__overview strong,
-  .admin-detail__overview small {
-    display: block;
+    padding: 19px 20px;
+    background: #fff;
+    border: 1px solid #eae4df;
+    border-radius: 15px;
   }
   
   .admin-detail__overview span {
-    color: #938781;
-    font-size: 13px;
-    margin-bottom: 13px;
+    display: block;
+    margin-bottom: 9px;
+    color: #91847b;
+    font-size: 12px;
   }
   
   .admin-detail__overview strong {
-    font-size: 22px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
     overflow-wrap: anywhere;
   }
   
+  .admin-detail__overview strong svg {
+    color: #f56b4a;
+    flex-shrink: 0;
+  }
+  
   .admin-detail__overview small {
-    margin-top: 10px;
-    color: #9B908A;
-    font-size: 12px;
+    display: block;
+    margin-top: 8px;
+    color: #958980;
+    font-size: 11px;
   }
   
   .admin-detail__overview .admin-detail__ai {
     display: inline;
-    color: #C36A47;
-    font-size: 12px;
+    margin: 0;
+    color: #b96544;
+    font-size: 11px;
   }
   
-  /* 본문 구조 */
+  /* 탭 메뉴 */
   
-  .admin-detail__grid {
+  .admin-detail__tabs {
+    display: flex;
+    gap: 7px;
+    padding: 6px;
+    margin: 0 0 19px;
+    background: #ece7e3;
+    border-radius: 14px;
+  }
+  
+  .admin-detail__tab {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 9px;
+    flex: 1;
+    min-width: 0;
+    padding: 13px 12px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: #81746b;
+    font-size: 13px;
+    font-weight: 750;
+    cursor: pointer;
+  }
+  
+  .admin-detail__tab:hover {
+    color: #bd6247;
+  }
+  
+  .admin-detail__tab.is-active {
+    background: #fff;
+    color: #da6647;
+    box-shadow: 0 3px 12px rgba(45, 41, 40, 0.07);
+  }
+  
+  .admin-detail__tab:focus-visible {
+    outline: 2px solid #f56b4a;
+    outline-offset: 2px;
+  }
+  
+  /* 공통 2열 그리드 */
+  
+  .admin-detail__content-grid,
+  .admin-detail__work-grid {
     display: grid;
-    grid-template-columns:
-      minmax(0, 1.75fr)
-      minmax(280px, 1fr);
-    gap: 24px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
     align-items: start;
   }
   
-  .admin-detail__main-column,
-  .admin-detail__side-column {
-    display: flex;
-    flex-direction: column;
-    gap: 22px;
+  .admin-detail__content-grid > *,
+  .admin-detail__work-grid > * {
     min-width: 0;
+    width: 100%;
   }
   
-  /* 공통 카드 */
+  .admin-detail__span-full {
+    grid-column: 1 / -1;
+  }
+  
+  /* 카드 */
   
   .admin-detail__card {
     min-width: 0;
-    padding: 26px 28px;
-    background: #FFFFFF;
-    border: 1px solid #EAE4DF;
-    border-radius: 22px;
-    box-shadow: 0 7px 24px rgba(45, 41, 40, 0.03);
+    padding: 23px 24px;
+    background: #fff;
+    border: 1px solid #eae4df;
+    border-radius: 17px;
+    box-shadow: 0 5px 18px rgba(45, 41, 40, 0.025);
   }
   
   .admin-detail__card-header {
-    margin-bottom: 22px;
+    margin-bottom: 16px;
   }
   
-  .admin-detail__card-header span {
-    color: #B65A3D;
-    font-size: 11px;
+  .admin-detail__card-header > span {
+    color: #b65a3d;
+    font-size: 10px;
     font-weight: 800;
     letter-spacing: 0.09em;
   }
   
   .admin-detail__card-header h3 {
-    margin: 9px 0 0;
-    font-size: 21px;
-    font-weight: 700;
-    letter-spacing: -0.6px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 7px 0 0;
+    font-size: 17px;
+    letter-spacing: -0.3px;
+  }
+  
+  .admin-detail__card-header svg {
+    flex-shrink: 0;
+    color: #f56b4a;
   }
   
   .admin-detail__summary {
     margin: 0;
-    padding: 20px 23px;
-    background: #FFFAF7;
-    border-radius: 14px;
-    color: #554B45;
+    padding: 17px 18px;
+    background: #fffaf7;
+    border-radius: 11px;
+    color: #554b45;
+    font-size: 13px;
     line-height: 1.8;
-    font-size: 15px;
     white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
   
   .admin-detail__empty {
-    color: #998C85;
-    font-size: 14px;
+    margin: 0;
+    color: #998c85;
+    font-size: 13px;
     line-height: 1.7;
+  }
+  
+  .admin-detail__warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    margin: 12px 0 0;
+    padding: 10px 12px;
+    border-radius: 9px;
+    background: #fff8e8;
+    color: #986a24;
+    font-size: 12px;
+    line-height: 1.7;
+  }
+  
+  .admin-detail__warning svg {
+    flex-shrink: 0;
+    margin-top: 2px;
   }
   
   /* 임금 비교 */
@@ -208,93 +310,135 @@
   .admin-detail__wages {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
+    gap: 9px;
   }
   
   .admin-detail__wages > div {
     min-width: 0;
-    padding: 21px 16px;
-    border-radius: 14px;
-    background: #F8F6F4;
-  }
-  
-  .admin-detail__wages span,
-  .admin-detail__wages strong {
-    display: block;
+    padding: 15px 12px;
+    background: #f8f6f4;
+    border-radius: 11px;
   }
   
   .admin-detail__wages span {
-    font-size: 12px;
-    color: #8C817A;
-    margin-bottom: 12px;
+    display: block;
+    margin-bottom: 10px;
+    color: #8c817a;
+    font-size: 11px;
   }
   
   .admin-detail__wages strong {
-    font-size: 20px;
+    display: block;
+    font-size: clamp(13px, 1.3vw, 17px);
     overflow-wrap: anywhere;
   }
   
   .admin-detail__wages .admin-detail__wage-difference {
-    background: #FFF0EB;
+    background: #fff0eb;
   }
   
   .admin-detail__wage-difference strong {
-    color: #C65539;
+    color: #c65539;
   }
   
-  .admin-detail__warning {
-    background: #FFF8E8;
-    color: #986A24;
-    padding: 12px 16px;
-    margin: 15px 0 0;
+  /* 공유 동의 */
+  
+  .admin-detail__consent > span {
+    display: block;
+    margin-bottom: 7px;
+    color: #938781;
+    font-size: 11px;
+  }
+  
+  .admin-detail__consent > strong {
+    display: block;
+    margin-bottom: 18px;
     font-size: 13px;
-    border-radius: 10px;
-    line-height: 1.6;
+  }
+  
+  .admin-detail__scopes {
+    display: flex;
+    gap: 7px;
+    flex-wrap: wrap;
+  }
+  
+  .admin-detail__scopes span {
+    padding: 7px 10px;
+    border-radius: 20px;
+    background: #fff0eb;
+    color: #af553b;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  
+  .admin-detail__scopes p {
+    font-size: 12px;
+    color: #988b82;
+  }
+  
+  /* 처리 현황 */
+  
+  .admin-detail__processing > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 11px 0;
+    border-bottom: 1px solid #f0ebe7;
+  }
+  
+  .admin-detail__processing > div:last-child {
+    border: 0;
+  }
+  
+  .admin-detail__processing span {
+    color: #91857e;
+    font-size: 12px;
+  }
+  
+  .admin-detail__processing strong {
+    color: #3d3530;
+    font-size: 13px;
+    text-align: right;
   }
   
   /* 근무 타임라인 */
   
   .admin-detail__table-wrap {
     width: 100%;
+    max-width: 100%;
     overflow-x: auto;
   }
   
   .admin-detail__table {
     width: 100%;
-    min-width: 640px;
+    min-width: 650px;
     border-collapse: collapse;
     text-align: left;
   }
   
   .admin-detail__table th {
-    background: #FBF8F6;
-    color: #82766F;
+    padding: 13px 10px;
+    background: #fbf8f6;
+    color: #82766f;
     font-size: 12px;
-    font-weight: 600;
-    padding: 16px 12px;
   }
   
   .admin-detail__table td {
-    border-bottom: 1px solid #F0EBE7;
-    padding: 18px 12px;
-    font-size: 13px;
+    padding: 14px 10px;
+    border-bottom: 1px solid #f0ebe7;
     color: #514842;
+    font-size: 12px;
     vertical-align: top;
   }
   
   .admin-detail__table details {
-    margin-top: 8px;
-    max-width: 240px;
-    color: #A65A3F;
-    font-size: 12px;
-  }
-  
-  .admin-detail__table summary {
-    cursor: pointer;
+    margin-top: 9px;
+    max-width: 250px;
+    color: #a65a3f;
   }
   
   .admin-detail__table details p {
-    line-height: 1.6;
     overflow-wrap: anywhere;
   }
   
@@ -303,195 +447,263 @@
   .admin-detail__contract > div {
     display: flex;
     justify-content: space-between;
-    gap: 15px;
-    padding: 13px 0;
-    border-bottom: 1px solid #F0EBE7;
+    gap: 12px;
+    padding: 11px 0;
+    border-bottom: 1px solid #f0ebe7;
   }
   
-  .admin-detail__contract > div span {
-    color: #8F837C;
-    font-size: 13px;
+  .admin-detail__contract span {
+    color: #8f837c;
+    font-size: 12px;
   }
   
-  .admin-detail__contract > div strong {
-    color: #3D3530;
-    font-size: 13px;
+  .admin-detail__contract strong {
+    font-size: 12px;
     text-align: right;
     overflow-wrap: anywhere;
   }
   
-  /* 증거 */
+  /* 증거 자료 */
   
   .admin-detail__evidences {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 9px;
   }
   
   .admin-detail__evidences > div {
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    gap: 16px;
-    border: 1px solid #EEE8E3;
-    background: #FFFCFA;
-    padding: 17px 19px;
-    border-radius: 12px;
-  }
-  
-  .admin-detail__evidences strong,
-  .admin-detail__evidences span {
-    display: block;
+    align-items: center;
+    gap: 13px;
+    padding: 12px;
+    border: 1px solid #eee8e3;
+    background: #fffcfa;
+    border-radius: 10px;
   }
   
   .admin-detail__evidences strong {
-    font-size: 14px;
+    display: block;
+    font-size: 12px;
   }
   
   .admin-detail__evidences span {
-    margin-top: 7px;
-    font-size: 12px;
-    color: #998C85;
+    display: block;
+    margin-top: 6px;
+    color: #998c85;
+    font-size: 11px;
   }
   
   .admin-detail__evidences a {
     flex-shrink: 0;
-    color: #C65539;
-    font-weight: 700;
+    color: #c65539;
     text-decoration: none;
-    font-size: 13px;
-  }
-  
-  /* 공유 동의 */
-  
-  .admin-detail__consent > span,
-  .admin-detail__consent > strong {
-    display: block;
-  }
-  
-  .admin-detail__consent > span {
-    color: #938781;
     font-size: 12px;
-    margin-bottom: 10px;
+    font-weight: 700;
   }
   
-  .admin-detail__consent > strong {
-    font-size: 14px;
-    margin-bottom: 25px;
+  /* 상담 업무 처리 */
+  
+  .admin-detail__work-section {
+    min-width: 0;
   }
   
-  .admin-detail__scopes {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  
-  .admin-detail__scopes span {
-    background: #FFF0EB;
-    color: #AF553B;
-    padding: 8px 11px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
-  }
-  
-  .admin-detail__scopes p {
-    color: #998C85;
-    font-size: 13px;
-  }
-  
-  /* 처리 현황 */
-  
-  .admin-detail__processing {
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .admin-detail__processing > div {
+  .admin-detail__work-heading {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 15px;
-    padding: 15px 0;
-    border-bottom: 1px solid #F0EBE7;
+    gap: 12px;
+    margin: 2px 0 18px;
   }
   
-  .admin-detail__processing > div:last-child {
-    border-bottom: 0;
+  .admin-detail__work-heading > svg {
+    color: #f56b4a;
   }
   
-  .admin-detail__processing span {
-    color: #91857E;
-    font-size: 13px;
+  .admin-detail__work-heading h2 {
+    margin: 0 0 5px;
+    font-size: 19px;
   }
   
-  .admin-detail__processing strong {
-    font-size: 14px;
-    text-align: right;
-  }
-  
-  .admin-detail__side-description {
-    color: #90847C;
-    font-size: 14px;
-    line-height: 1.8;
+  .admin-detail__work-heading p {
     margin: 0;
+    font-size: 12px;
+    color: #978b83;
   }
   
-  /* 면책 및 오류 */
+  .admin-detail__work-cell {
+    min-width: 0;
+    width: 100%;
+  }
+  
+  .admin-detail__work-cell > * {
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+  }
+  
+  .admin-detail__work-grid input,
+  .admin-detail__work-grid select,
+  .admin-detail__work-grid textarea {
+    box-sizing: border-box;
+    max-width: 100%;
+  }
+  
+  .admin-detail__work-grid button,
+  .admin-detail__work-grid p,
+  .admin-detail__work-grid label {
+    overflow-wrap: anywhere;
+  }
+  
+  .admin-detail__action-card {
+    display: flex;
+    flex-direction: column;
+    min-height: 185px;
+  }
+  
+  .admin-detail__action-description {
+    margin: 0 0 17px;
+    color: #95877f;
+    font-size: 12px;
+    line-height: 1.8;
+  }
+  
+  /* 버튼 */
+  
+  .admin-detail__primary {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border: 0;
+    border-radius: 10px;
+    background: #f56b4a;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 750;
+    cursor: pointer;
+  }
+  
+  .admin-detail__primary:hover:not(:disabled) {
+    background: #e66040;
+  }
+  
+  .admin-detail__primary:disabled {
+    background: #e7d9d2;
+    color: #998b83;
+    cursor: not-allowed;
+  }
+  
+  .admin-detail__action-button {
+    width: 100%;
+    margin-top: auto;
+  }
+  
+  /* 하단 안내 */
   
   .admin-detail__disclaimer {
-    margin-top: 25px;
-    padding: 20px 24px;
-    border-radius: 15px;
-    background: #FFFAF4;
-    border: 1px solid #EBDFD3;
-    color: #8B705F;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-top: 22px;
+    padding: 15px 18px;
+    border: 1px solid #ebdfd3;
+    border-radius: 12px;
+    background: #fffaf4;
+    color: #8b705f;
+    font-size: 12px;
     line-height: 1.7;
-    font-size: 13px;
   }
   
+  .admin-detail__disclaimer svg {
+    flex-shrink: 0;
+  }
+  
+  /* 오류 및 로딩 */
+  
   .admin-detail__feedback {
-    border: 1px solid #EBE3DE;
-    background: #FFFFFF;
-    padding: 45px;
-    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    flex-wrap: wrap;
+    padding: 38px;
+    background: #fff;
+    border: 1px solid #ebe3de;
+    border-radius: 16px;
     color: #746760;
     line-height: 1.7;
   }
   
-  .admin-detail__feedback h2 {
-    color: #332A26;
+  .admin-detail__feedback p {
+    width: 100%;
   }
   
-  .admin-detail__primary {
-    padding: 12px 18px;
-    border-radius: 10px;
-    background: #F56B4A;
-    border: 0;
-    color: white;
-    font-weight: 700;
-    cursor: pointer;
+  .admin-detail__spin {
+    animation: admin-detail-spin 0.8s linear infinite;
+  }
+  
+  @keyframes admin-detail-spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
   
   /* 반응형 */
   
-  @media (max-width: 1200px) {
-    .admin-detail__grid {
+  @media (max-width: 1080px) {
+    .admin-detail {
+      padding: 20px;
+    }
+  
+    .admin-detail__content-grid,
+    .admin-detail__work-grid {
       grid-template-columns: 1fr;
+    }
+  
+    .admin-detail__wages strong {
+      font-size: 17px;
     }
   }
   
-  @media (max-width: 800px) {
+  @media (max-width: 760px) {
+    .admin-detail {
+      padding: 14px;
+    }
+  
+    .admin-detail__top {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  
     .admin-detail__overview {
       grid-template-columns: 1fr;
+      gap: 9px;
+    }
+  
+    .admin-detail__tabs {
+      gap: 2px;
+      padding: 4px;
+    }
+  
+    .admin-detail__tab {
+      gap: 5px;
+      padding: 11px 5px;
+      font-size: 11px;
+    }
+  
+    .admin-detail__tab svg {
+      width: 14px;
+    }
+  
+    .admin-detail__card {
+      padding: 18px;
     }
   
     .admin-detail__wages {
       grid-template-columns: 1fr;
     }
   
-    .admin-detail__top {
-      flex-direction: column;
+    .admin-detail__disclaimer {
       align-items: flex-start;
     }
   }

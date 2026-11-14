@@ -1,26 +1,25 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-
 import {
-  getAdminConsultationDetail,
-} from "../services/adminConsultationApi";
+  ArrowLeft, RefreshCw, UserRound, ShieldCheck, ClipboardList,
+  AlertTriangle, FileText, Clock3, Wallet, FolderOpen, UserCheck,
+  Network, MessageCircle, FileCheck2, ArrowRight, BriefcaseBusiness,
+  LayoutDashboard, Files,
+} from "lucide-react";
 
+import { getAdminConsultationDetail } from "../services/adminConsultationApi";
 import AdminCaseActions from "../components/AdminCaseActions";
 import AdminInfoRequests from "../components/AdminInfoRequests";
-
+import AdminReferrals from "../components/AdminReferrals";
 import "./AdminCaseDetail.css";
-
-// ========================================
-// 상태 및 표시 문구
-// ========================================
 
 const STATUS_LABELS = {
   RECEIVED: "접수",
   REVIEWING: "검토 중",
   INFO_REQUESTED: "자료 요청",
   REFERRED: "전문가 연계",
-  CLOSED: "완료",
+  CLOSED: "종결",
 };
 
 const URGENCY_LABELS = {
@@ -33,6 +32,7 @@ const SCOPE_LABELS = {
   SUMMARY: "사건 요약",
   ATTENDANCE: "근무기록",
   WAGE: "임금 비교",
+  PAYSLIP: "급여명세서",
   CONTRACT: "근로계약서",
   COMPLAINT_DRAFT: "진정서 초안",
   EVIDENCE: "증거 자료",
@@ -44,26 +44,29 @@ const FLAG_LABELS = {
   MISSING_CLOCK_OUT: "퇴근 기록 누락",
 };
 
-// ========================================
-// 데이터 표시 유틸리티
-// ========================================
+const TABS = [
+  { id: "overview", label: "사건 개요", icon: LayoutDashboard },
+  { id: "evidence", label: "근무·증빙 자료", icon: Files },
+  { id: "work", label: "상담 업무 처리", icon: BriefcaseBusiness },
+];
 
-function formatMoney(amount) {
-  if (amount == null) {
+function formatMoney(value) {
+  if (
+    value == null ||
+    value === "" ||
+    !Number.isFinite(Number(value))
+  ) {
     return "확인 필요";
   }
 
-  return `${Number(amount).toLocaleString("ko-KR")}원`;
+  return `${Number(value).toLocaleString("ko-KR")}원`;
 }
 
 function formatDate(value, withTime = false) {
   if (!value) return "-";
 
   const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "-";
-  }
+  if (Number.isNaN(date.getTime())) return "-";
 
   return new Intl.DateTimeFormat("ko-KR", {
     timeZone: "Asia/Seoul",
@@ -71,11 +74,7 @@ function formatDate(value, withTime = false) {
     month: "2-digit",
     day: "2-digit",
     ...(withTime
-      ? {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: false,
-        }
+      ? { hour: "2-digit", minute: "2-digit", hour12: false }
       : {}),
   }).format(date);
 }
@@ -84,10 +83,7 @@ function formatTime(value) {
   if (!value) return "-";
 
   const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "-";
-  }
+  if (Number.isNaN(date.getTime())) return "-";
 
   return new Intl.DateTimeFormat("ko-KR", {
     timeZone: "Asia/Seoul",
@@ -97,103 +93,123 @@ function formatTime(value) {
   }).format(date);
 }
 
-function formatMinutes(minutes) {
-  if (minutes == null) {
-    return "확인 필요";
-  }
+function formatMinutes(value) {
+  if (value == null) return "확인 필요";
 
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-
-  return `${hours}시간 ${rest}분`;
+  return `${Math.floor(value / 60)}시간 ${value % 60}분`;
 }
 
-// ========================================
-// 관리자 사건 상세 페이지
-// ========================================
+function DetailSectionTitle({ icon: Icon, eyebrow, title }) {
+  return (
+    <div className="admin-detail__card-header">
+      <span>{eyebrow}</span>
+      <h3>
+        <Icon size={19} strokeWidth={1.8} />
+        {title}
+      </h3>
+    </div>
+  );
+}
+
+function SimpleAction({
+  icon: Icon,
+  title,
+  eyebrow,
+  description,
+  buttonText,
+  onClick,
+  disabled,
+}) {
+  return (
+    <section className="admin-detail__card admin-detail__action-card">
+      <DetailSectionTitle
+        icon={Icon}
+        eyebrow={eyebrow}
+        title={title}
+      />
+
+      <p className="admin-detail__action-description">
+        {description}
+      </p>
+
+      <button
+        type="button"
+        className="admin-detail__primary admin-detail__action-button"
+        disabled={disabled}
+        onClick={onClick}
+      >
+        <Icon size={17} />
+        {buttonText}
+        {!disabled && <ArrowRight size={16} />}
+      </button>
+    </section>
+  );
+}
 
 export default function AdminCaseDetail() {
   const { caseId } = useParams();
   const navigate = useNavigate();
 
+  const [tab, setTab] = useState("overview");
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [errorCode, setErrorCode] = useState("");
   const [reloadKey, setReloadKey] = useState(0);
 
-  // ========================================
-  // 사건 상세 조회
-  // Mock / 실제 API 공통
-  // ========================================
+  const refresh = () => setReloadKey((value) => value + 1);
+
+  useEffect(() => {
+    setTab("overview");
+  }, [caseId]);
 
   useEffect(() => {
     let active = true;
 
-    async function loadDetail() {
+    async function load() {
       setLoading(true);
       setError("");
       setErrorCode("");
       setDetail(null);
 
       try {
-        const data = await getAdminConsultationDetail(
-          caseId
-        );
-
-        if (active) {
-          setDetail(data);
-        }
+        const data = await getAdminConsultationDetail(caseId);
+        if (active) setDetail(data);
       } catch (err) {
-        if (!active) return;
-
-        setErrorCode(err.errorCode || "");
-        setError(
-          err.message ||
-            "사건 상세 조회에 실패했습니다."
-        );
-      } finally {
         if (active) {
-          setLoading(false);
+          setError(
+            err.message || "사건 상세 조회에 실패했습니다."
+          );
+          setErrorCode(err.errorCode || "");
         }
+      } finally {
+        if (active) setLoading(false);
       }
     }
 
-    loadDetail();
+    load();
 
     return () => {
       active = false;
     };
   }, [caseId, reloadKey]);
 
-  // ========================================
-  // 저장 성공 후 상세 정보 다시 조회
-  // ========================================
-
-  const handleCaseUpdated = () => {
-    setReloadKey((prev) => prev + 1);
-  };
-
-  // ========================================
-  // 로딩 상태
-  // ========================================
-
   if (loading) {
     return (
       <div className="admin-detail">
-        <p className="admin-detail__feedback">
+        <div className="admin-detail__feedback">
+          <RefreshCw
+            size={20}
+            className="admin-detail__spin"
+          />
           상담 사건 정보를 불러오는 중입니다.
-        </p>
+        </div>
       </div>
     );
   }
 
-  // ========================================
-  // 오류 상태
-  // ========================================
-
-  if (error) {
-    const accessDenied = [
+  if (error || !detail) {
+    const denied = [
       "FORBIDDEN",
       "CONSENT_NOT_GRANTED",
     ].includes(errorCode);
@@ -201,30 +217,28 @@ export default function AdminCaseDetail() {
     return (
       <div className="admin-detail">
         <button
-          type="button"
           className="admin-detail__back"
           onClick={() => navigate("/cases")}
         >
-          ← 사건 목록
+          <ArrowLeft size={16} />
+          사건 목록
         </button>
 
-        <div
-          className="admin-detail__feedback"
-          role="alert"
-        >
-          <h2>
-            {accessDenied
+        <div className="admin-detail__feedback" role="alert">
+          <AlertTriangle size={20} />
+
+          <strong>
+            {denied
               ? "사건 정보를 열람할 수 없습니다."
               : "사건 정보를 불러오지 못했습니다."}
-          </h2>
+          </strong>
 
-          <p>{error}</p>
+          <p>{error || "사건 정보가 없습니다."}</p>
 
-          {!accessDenied && (
+          {!denied && (
             <button
-              type="button"
               className="admin-detail__primary"
-              onClick={handleCaseUpdated}
+              onClick={refresh}
             >
               다시 시도
             </button>
@@ -234,42 +248,45 @@ export default function AdminCaseDetail() {
     );
   }
 
-  if (!detail) return null;
-
-  // ========================================
-  // 사건 정보
-  // ========================================
-
   const urgency =
-    detail.urgencyLevel ||
-    detail.aiSuggestedUrgency;
+    detail.urgencyLevel || detail.aiSuggestedUrgency;
 
-  const urgencySuggested =
-    !detail.urgencyLevel &&
-    Boolean(detail.aiSuggestedUrgency);
+  const sharedScope = Array.isArray(
+    detail.consent?.sharedScope
+  )
+    ? detail.consent.sharedScope
+    : [];
 
-  const sharedScope =
-    detail.consent?.sharedScope || [];
+  const isClosed = detail.status === "CLOSED";
+  const isRevoked = Boolean(detail.consent?.revokedAt);
 
-  // ========================================
-  // 화면
-  // ========================================
+  const timeline = Array.isArray(detail.timeline)
+    ? detail.timeline
+    : [];
+
+  const evidences = Array.isArray(detail.evidences)
+    ? detail.evidences
+    : [];
 
   return (
-    <div className="admin-detail">
-      {/* 상단 사건 정보 */}
-      <div className="admin-detail__top">
+    <div className="admin-detail admin-detail--v2">
+      {/* ========================================
+          헤더
+      ======================================== */}
+
+      <header className="admin-detail__top">
         <div>
           <button
-            type="button"
             className="admin-detail__back"
+            type="button"
             onClick={() => navigate("/cases")}
           >
-            ← 사건 목록으로
+            <ArrowLeft size={16} />
+            사건 목록으로
           </button>
 
           <p className="admin-detail__eyebrow">
-            상담 사건 상세
+            CONSULTATION DETAIL
           </p>
 
           <h2>{detail.id}</h2>
@@ -277,36 +294,40 @@ export default function AdminCaseDetail() {
 
         <div className="admin-detail__top-actions">
           <span
-            className={`admin-detail__status status-${
-              detail.status?.toLowerCase()
-            }`}
+            className={`admin-detail__status status-${(
+              detail.status || ""
+            ).toLowerCase()}`}
           >
             {STATUS_LABELS[detail.status] ||
-              detail.status}
+              detail.status ||
+              "상태 미확인"}
           </span>
 
           <button
-            type="button"
             className="admin-detail__refresh"
-            onClick={handleCaseUpdated}
+            type="button"
+            onClick={refresh}
           >
+            <RefreshCw size={15} />
             새로고침
           </button>
         </div>
-      </div>
+      </header>
 
       {/* ========================================
-          기본 정보 카드
+          상단 기본 정보
       ======================================== */}
 
-      <section className="admin-detail__overview">
+      <section
+        className="admin-detail__overview"
+        aria-label="상담 사건 기본 정보"
+      >
         <div>
           <span>노동자</span>
-
           <strong>
+            <UserRound size={19} />
             {detail.worker?.name || "확인 필요"}
           </strong>
-
           <small>
             언어: {detail.worker?.language || "-"}
           </small>
@@ -314,52 +335,70 @@ export default function AdminCaseDetail() {
 
         <div>
           <span>상담 우선순위</span>
-
           <strong>
+            <ShieldCheck size={19} />
             {URGENCY_LABELS[urgency] || "미분류"}
 
-            {urgencySuggested && (
-              <small className="admin-detail__ai">
-                {" "}
-                AI 제안
-              </small>
-            )}
+            {!detail.urgencyLevel &&
+              detail.aiSuggestedUrgency && (
+                <small className="admin-detail__ai">
+                  AI 제안
+                </small>
+              )}
           </strong>
-
-          <small>
-            최종 우선순위는 담당자가 검토합니다.
-          </small>
+          <small>담당자 검토 후 최종 확정됩니다.</small>
         </div>
 
         <div>
           <span>담당자</span>
-
           <strong>
+            <UserCheck size={19} />
             {detail.assignee?.name || "미배정"}
           </strong>
-
           <small>상담기관 담당자</small>
         </div>
       </section>
 
       {/* ========================================
-          왼쪽 사건 상세 / 오른쪽 관리
+          탭 메뉴
       ======================================== */}
 
-      <div className="admin-detail__grid">
-        {/* 왼쪽 상세 정보 */}
-        <div className="admin-detail__main-column">
-          {/* ========================================
-              AI 사건 요약
-          ======================================== */}
+      <nav
+        className="admin-detail__tabs"
+        aria-label="사건 상세 메뉴"
+      >
+        {TABS.map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            type="button"
+            className={`admin-detail__tab ${
+              tab === id ? "is-active" : ""
+            }`}
+            aria-current={tab === id ? "page" : undefined}
+            onClick={() => setTab(id)}
+          >
+            <Icon size={17} />
+            {label}
+          </button>
+        ))}
+      </nav>
 
+      {/* ========================================
+          탭 1: 사건 개요
+      ======================================== */}
+
+      {tab === "overview" && (
+        <div
+          className="admin-detail__content-grid"
+          key="overview"
+        >
+          {/* 사건 요약 */}
           <section className="admin-detail__card">
-            <div className="admin-detail__card-header">
-              <div>
-                <span>AI SUMMARY</span>
-                <h3>사건 요약</h3>
-              </div>
-            </div>
+            <DetailSectionTitle
+              icon={ClipboardList}
+              eyebrow="AI SUMMARY"
+              title="사건 요약"
+            />
 
             {detail.summary?.ko ? (
               <p className="admin-detail__summary">
@@ -372,24 +411,51 @@ export default function AdminCaseDetail() {
             )}
           </section>
 
-          {/* ========================================
-              임금 비교
-          ======================================== */}
-
+          {/* 정보 공유 동의 */}
           <section className="admin-detail__card">
-            <div className="admin-detail__card-header">
-              <div>
-                <span>WAGE COMPARISON</span>
-                <h3>임금 비교</h3>
+            <DetailSectionTitle
+              icon={ShieldCheck}
+              eyebrow="SHARING CONSENT"
+              title="정보 공유 동의"
+            />
+
+            <div className="admin-detail__consent">
+              <span>동의 일시</span>
+              <strong>
+                {formatDate(
+                  detail.consent?.agreedAt,
+                  true
+                )}
+              </strong>
+
+              <span>공유 범위</span>
+              <div className="admin-detail__scopes">
+                {sharedScope.length ? (
+                  sharedScope.map((scope) => (
+                    <span key={scope}>
+                      {SCOPE_LABELS[scope] || scope}
+                    </span>
+                  ))
+                ) : (
+                  <p>공유 범위 정보 없음</p>
+                )}
               </div>
             </div>
+          </section>
+
+          {/* 임금 비교 */}
+          <section className="admin-detail__card">
+            <DetailSectionTitle
+              icon={Wallet}
+              eyebrow="WAGE COMPARISON"
+              title="임금 비교"
+            />
 
             {detail.wageComparison ? (
               <>
                 <div className="admin-detail__wages">
                   <div>
                     <span>예상 임금</span>
-
                     <strong>
                       {formatMoney(
                         detail.wageComparison.expectedAmount
@@ -399,7 +465,6 @@ export default function AdminCaseDetail() {
 
                   <div>
                     <span>실제 지급액</span>
-
                     <strong>
                       {formatMoney(
                         detail.wageComparison.actualAmount
@@ -409,7 +474,6 @@ export default function AdminCaseDetail() {
 
                   <div className="admin-detail__wage-difference">
                     <span>확인 필요 차이</span>
-
                     <strong>
                       {formatMoney(
                         detail.wageComparison.differenceAmount
@@ -427,6 +491,7 @@ export default function AdminCaseDetail() {
                         className="admin-detail__warning"
                         key={`${item.code}-${index}`}
                       >
+                        <AlertTriangle size={15} />
                         확인 필요: {item.message}
                       </p>
                     )
@@ -439,134 +504,152 @@ export default function AdminCaseDetail() {
             )}
           </section>
 
-          {/* ========================================
-              근무 타임라인
-          ======================================== */}
-
+          {/* 처리 현황 */}
           <section className="admin-detail__card">
-            <div className="admin-detail__card-header">
+            <DetailSectionTitle
+              icon={Network}
+              eyebrow="PROCESSING"
+              title="처리 현황"
+            />
+
+            <div className="admin-detail__processing">
               <div>
-                <span>ATTENDANCE TIMELINE</span>
-                <h3>근무 타임라인</h3>
+                <span>현재 상태</span>
+                <strong>
+                  {STATUS_LABELS[detail.status] ||
+                    detail.status ||
+                    "확인 필요"}
+                </strong>
+              </div>
+
+              <div>
+                <span>담당자</span>
+                <strong>
+                  {detail.assignee?.name || "미배정"}
+                </strong>
+              </div>
+
+              <div>
+                <span>추가 자료 요청</span>
+                <strong>
+                  {detail.infoRequests?.length ?? 0}건
+                </strong>
+              </div>
+
+              <div>
+                <span>전문가 연계</span>
+                <strong>
+                  {detail.referrals?.length ?? 0}건
+                </strong>
               </div>
             </div>
+          </section>
+        </div>
+      )}
 
-            {Array.isArray(detail.timeline) ? (
-              detail.timeline.length === 0 ? (
-                <p className="admin-detail__empty">
-                  공유된 근무기록이 없습니다.
-                </p>
-              ) : (
-                <div className="admin-detail__table-wrap">
-                  <table className="admin-detail__table">
-                    <thead>
-                      <tr>
-                        <th>근무일</th>
-                        <th>출근</th>
-                        <th>퇴근</th>
-                        <th>휴게</th>
-                        <th>실근무시간</th>
-                        <th>확인 사항</th>
+      {/* ========================================
+          탭 2: 근무 및 증빙 자료
+      ======================================== */}
+
+      {tab === "evidence" && (
+        <div
+          className="admin-detail__content-grid"
+          key="evidence"
+        >
+          {/* 근무 타임라인 */}
+          <section className="admin-detail__card admin-detail__span-full">
+            <DetailSectionTitle
+              icon={Clock3}
+              eyebrow="ATTENDANCE TIMELINE"
+              title="근무 타임라인"
+            />
+
+            {timeline.length ? (
+              <div className="admin-detail__table-wrap">
+                <table className="admin-detail__table">
+                  <thead>
+                    <tr>
+                      <th>근무일</th>
+                      <th>출근</th>
+                      <th>퇴근</th>
+                      <th>휴게</th>
+                      <th>실근무시간</th>
+                      <th>확인 사항</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {timeline.map((record, index) => (
+                      <tr key={`${record.date}-${index}`}>
+                        <td>{record.date || "-"}</td>
+                        <td>
+                          {formatTime(record.clockInAt)}
+                        </td>
+                        <td>
+                          {formatTime(record.clockOutAt)}
+                        </td>
+                        <td>
+                          {record.breakMinutes == null
+                            ? "미입력"
+                            : `${record.breakMinutes}분`}
+                        </td>
+                        <td>
+                          {formatMinutes(
+                            record.workedMinutes
+                          )}
+                        </td>
+
+                        <td>
+                          {(record.flags || [])
+                            .map(
+                              (flag) =>
+                                FLAG_LABELS[flag] || flag
+                            )
+                            .join(", ") || "정상"}
+
+                          {(record.edits || []).length >
+                            0 && (
+                            <details>
+                              <summary>수정 이력</summary>
+
+                              {record.edits.map(
+                                (edit, i) => (
+                                  <p key={i}>
+                                    {edit.field}:{" "}
+                                    {String(
+                                      edit.before ?? "-"
+                                    )}
+                                    {" → "}
+                                    {String(
+                                      edit.after ?? "-"
+                                    )}
+                                    {" / "}
+                                    {edit.reason}
+                                  </p>
+                                )
+                              )}
+                            </details>
+                          )}
+                        </td>
                       </tr>
-                    </thead>
-
-                    <tbody>
-                      {detail.timeline.map(
-                        (record, index) => (
-                          <tr
-                            key={`${record.date}-${index}`}
-                          >
-                            <td>{record.date}</td>
-
-                            <td>
-                              {formatTime(
-                                record.clockInAt
-                              )}
-                            </td>
-
-                            <td>
-                              {formatTime(
-                                record.clockOutAt
-                              )}
-                            </td>
-
-                            <td>
-                              {record.breakMinutes == null
-                                ? "미입력"
-                                : `${record.breakMinutes}분`}
-                            </td>
-
-                            <td>
-                              {formatMinutes(
-                                record.workedMinutes
-                              )}
-                            </td>
-
-                            <td>
-                              {(record.flags || []).length
-                                ? record.flags
-                                    .map(
-                                      (flag) =>
-                                        FLAG_LABELS[flag] ||
-                                        flag
-                                    )
-                                    .join(", ")
-                                : "정상"}
-
-                              {(record.edits || []).length >
-                                0 && (
-                                <details>
-                                  <summary>
-                                    수정 이력
-                                  </summary>
-
-                                  {record.edits.map(
-                                    (
-                                      edit,
-                                      editIndex
-                                    ) => (
-                                      <p
-                                        key={editIndex}
-                                      >
-                                        {edit.field}:{" "}
-                                        {edit.before ??
-                                          "-"}
-                                        {" → "}
-                                        {edit.after ??
-                                          "-"}
-                                        {" / "}
-                                        {edit.reason}
-                                      </p>
-                                    )
-                                  )}
-                                </details>
-                              )}
-                            </td>
-                          </tr>
-                        )
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              )
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             ) : (
               <p className="admin-detail__empty">
-                근무기록이 공유되지 않았습니다.
+                공유된 근무기록이 없습니다.
               </p>
             )}
           </section>
 
-          {/* ========================================
-              근로계약서
-          ======================================== */}
-
+          {/* 근로계약서 */}
           <section className="admin-detail__card">
-            <div className="admin-detail__card-header">
-              <div>
-                <span>CONTRACT</span>
-                <h3>근로계약서 검토</h3>
-              </div>
-            </div>
+            <DetailSectionTitle
+              icon={FileText}
+              eyebrow="CONTRACT"
+              title="근로계약서 검토"
+            />
 
             {detail.contract ? (
               <div className="admin-detail__contract">
@@ -593,6 +676,7 @@ export default function AdminCaseDetail() {
                       className="admin-detail__warning"
                       key={index}
                     >
+                      <AlertTriangle size={15} />
                       {review.message}
                     </p>
                   )
@@ -605,50 +689,40 @@ export default function AdminCaseDetail() {
             )}
           </section>
 
-          {/* ========================================
-              공유된 증거
-          ======================================== */}
-
+          {/* 공유 증거 */}
           <section className="admin-detail__card">
-            <div className="admin-detail__card-header">
-              <div>
-                <span>SHARED EVIDENCE</span>
-                <h3>공유된 증거</h3>
-              </div>
-            </div>
+            <DetailSectionTitle
+              icon={FolderOpen}
+              eyebrow="SHARED EVIDENCE"
+              title="공유된 증거"
+            />
 
-            {Array.isArray(detail.evidences) &&
-            detail.evidences.length > 0 ? (
+            {evidences.length ? (
               <div className="admin-detail__evidences">
-                {detail.evidences.map(
-                  (evidence) => (
-                    <div key={evidence.id}>
-                      <div>
-                        <strong>
-                          {evidence.title}
-                        </strong>
-
-                        <span>
-                          {evidence.type} ·{" "}
-                          {formatDate(
-                            evidence.occurredAt,
-                            true
-                          )}
-                        </span>
-                      </div>
-
-                      {evidence.fileUrl && (
-                        <a
-                          href={evidence.fileUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          파일 열기
-                        </a>
-                      )}
+                {evidences.map((evidence, index) => (
+                  <div key={evidence.id || index}>
+                    <div>
+                      <strong>{evidence.title}</strong>
+                      <span>
+                        {evidence.type} ·{" "}
+                        {formatDate(
+                          evidence.occurredAt,
+                          true
+                        )}
+                      </span>
                     </div>
-                  )
-                )}
+
+                    {evidence.fileUrl && (
+                      <a
+                        href={evidence.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        파일 열기
+                      </a>
+                    )}
+                  </div>
+                ))}
               </div>
             ) : (
               <p className="admin-detail__empty">
@@ -657,126 +731,89 @@ export default function AdminCaseDetail() {
             )}
           </section>
         </div>
-
-        {/* ========================================
-            오른쪽 관리자 영역
-        ======================================== */}
-
-        <aside className="admin-detail__side-column">
-          {/* 정보 공유 동의 */}
-          <section className="admin-detail__card">
-            <div className="admin-detail__card-header">
-              <div>
-                <span>SHARING CONSENT</span>
-                <h3>정보 공유 동의</h3>
-              </div>
-            </div>
-
-            <div className="admin-detail__consent">
-              <span>동의 일시</span>
-
-              <strong>
-                {formatDate(
-                  detail.consent?.agreedAt,
-                  true
-                )}
-              </strong>
-
-              <span>공유 범위</span>
-
-              <div className="admin-detail__scopes">
-                {sharedScope.length ? (
-                  sharedScope.map((scope) => (
-                    <span key={scope}>
-                      {SCOPE_LABELS[scope] || scope}
-                    </span>
-                  ))
-                ) : (
-                  <p>공유 범위 정보 없음</p>
-                )}
-              </div>
-            </div>
-          </section>
-
-          {/* ========================================
-              처리 현황
-          ======================================== */}
-
-          <section className="admin-detail__card">
-            <div className="admin-detail__card-header">
-              <div>
-                <span>PROCESSING</span>
-                <h3>처리 현황</h3>
-              </div>
-            </div>
-
-            <div className="admin-detail__processing">
-              <div>
-                <span>현재 상태</span>
-
-                <strong>
-                  {STATUS_LABELS[detail.status] ||
-                    detail.status}
-                </strong>
-              </div>
-
-              <div>
-                <span>담당자</span>
-
-                <strong>
-                  {detail.assignee?.name ||
-                    "미배정"}
-                </strong>
-              </div>
-
-              <div>
-                <span>추가 자료 요청</span>
-
-                <strong>
-                  {detail.infoRequests?.length ?? 0}
-                  건
-                </strong>
-              </div>
-
-              <div>
-                <span>전문가 연계</span>
-
-                <strong>
-                  {detail.referrals?.length ?? 0}
-                  건
-                </strong>
-              </div>
-            </div>
-          </section>
-
-          {/* ========================================
-              사건 처리 관리
-              담당자 배정 / 긴급도 확정 /
-              처리 상태 변경
-          ======================================== */}
-
-          <AdminCaseActions
-            detail={detail}
-            onUpdated={handleCaseUpdated}
-          />
-
-          {/* ========================================
-              추가 자료 요청 - 새로 추가한 부분
-              요청 내역 / 요청 등록
-          ======================================== */}
-
-          <AdminInfoRequests
-            detail={detail}
-            onUpdated={handleCaseUpdated}
-          />
-        </aside>
-      </div>
+      )}
 
       {/* ========================================
-          법률 면책 문구
+          탭 3: 상담 업무 처리
       ======================================== */}
 
+      {tab === "work" && (
+        <section
+          className="admin-detail__work-section"
+          key="work"
+        >
+          <div className="admin-detail__work-heading">
+            <BriefcaseBusiness size={21} />
+
+            <div>
+              <h2>상담 업무 처리</h2>
+              <p>
+                담당자 관리, 추가 자료 요청,
+                전문가 연계 및 상담 종결
+              </p>
+            </div>
+          </div>
+
+          <div className="admin-detail__work-grid">
+            {/* 담당자·상태 관리 */}
+            <div className="admin-detail__work-cell">
+              <AdminCaseActions
+                detail={detail}
+                onUpdated={refresh}
+              />
+            </div>
+
+            {/* 추가 자료 요청 */}
+            <div className="admin-detail__work-cell">
+              <AdminInfoRequests
+                detail={detail}
+                onUpdated={refresh}
+              />
+            </div>
+
+            {/* 전문가 연계 */}
+            <div className="admin-detail__work-cell">
+              <AdminReferrals
+                detail={detail}
+                onUpdated={refresh}
+              />
+            </div>
+
+            {/* 노동자 메시지 */}
+            <SimpleAction
+              icon={MessageCircle}
+              eyebrow="CONSULTATION MESSAGE"
+              title="노동자 상담 메시지"
+              description="노동자와 주고받은 상담 내용을 확인하고 한국어 메시지를 전송합니다."
+              buttonText="상담 메시지 확인"
+              onClick={() =>
+                navigate(`/cases/${caseId}/messages`)
+              }
+            />
+
+            {/* 상담 종결 */}
+            <SimpleAction
+              icon={FileCheck2}
+              eyebrow="CONSULTATION RESULT"
+              title="상담 결과 및 종결"
+              description="상담 내용·조치 결과·종결 사유를 기록한 뒤 사건을 마무리합니다."
+              buttonText={
+                isClosed
+                  ? "이미 종결된 상담"
+                  : "상담 결과 기록하기"
+              }
+              disabled={isClosed || isRevoked}
+              onClick={() =>
+                navigate(`/cases/${caseId}/close`)
+              }
+            />
+          </div>
+        </section>
+      )}
+
+      {/* 법률 안내 */}
       <div className="admin-detail__disclaimer">
+        <AlertTriangle size={16} />
         {detail.disclaimer ||
           "참고용 자료이며 최종 법적 판단은 전문가 확인이 필요합니다."}
       </div>
