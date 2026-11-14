@@ -39,10 +39,11 @@ export const getSalaryComparisons = (query = {}, options = {}) =>
     ...options,
   });
 
-// 실제 목록 API를 사용한다.
-// 페이지/size 파라미터는 요청 스키마가 확인되지 않아 추가하지 않는다.
+// GET /payroll/comparisons?month=YYYY-MM → 해당 월의 진행 상태
+// { month, state: NOT_SUBMITTED|READY|COMPARED, statementId, payday, comparison }
+// month 없이 호출하면 서버가 400(VALIDATION_ERROR)을 반환한다.
 export async function getSalaryOverviewForMonth(month, options = {}) {
-  const response = await getSalaryComparisons({}, options);
+  const response = await getSalaryComparisons({ month }, options);
   return payrollOverviewFromComparisons(response, month);
 }
 

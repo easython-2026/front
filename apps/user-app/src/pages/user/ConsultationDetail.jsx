@@ -23,10 +23,50 @@ function unwrap(response) {
   return response?.data ?? response;
 }
 
+const FIELD_LABELS = {
+  message: "요청 내용", requestedItems: "요청 자료", createdAt: "요청일",
+  type: "연계 유형", organization: "기관", contact: "연락처", note: "메모",
+  status: "상태", at: "시각", content: "처리 결과", actionTaken: "조치 내용",
+  closeReason: "종결 사유", closedAt: "종결일", ko: "한국어", translated: "번역",
+  sharedScope: "공유 범위", agreedAt: "동의일", revokedAt: "철회일",
+};
+const CODE_LABELS = {
+  CONTRACT: "근로계약서", PAYSLIP: "급여명세서", ATTENDANCE: "근무기록", OTHER: "기타",
+  SUMMARY: "요약", COMPLAINT_DRAFT: "진정서 초안",
+  LABOR_ATTORNEY: "노무사 연계", INTERPRETER: "통역 연계",
+  RECEIVED: "접수", REVIEWING: "검토 중", INFO_REQUESTED: "추가 자료 요청", REFERRED: "전문기관 연계", CLOSED: "종결",
+};
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}T/;
+
+function formatScalar(value) {
+  if (typeof value !== "string") return String(value);
+  if (CODE_LABELS[value]) return CODE_LABELS[value];
+  if (ISO_DATE.test(value)) {
+    const d = new Date(value);
+    if (!Number.isNaN(d.getTime())) return d.toLocaleString("ko-KR", { dateStyle: "medium", timeStyle: "short" });
+  }
+  return value;
+}
+
+// 서버 응답 객체를 원본 JSON 대신 "항목: 값" 줄로 보여 준다(id·빈 값은 생략).
 function formatValue(value) {
-  if (value == null) return "정보 없음";
-  if (typeof value === "string") return value;
-  return JSON.stringify(value, null, 2);
+  if (value == null || value === "") return "정보 없음";
+  if (Array.isArray(value)) {
+    if (!value.length) return "없음";
+    // 객체 배열(이력 등)은 한 줄씩, 값 배열은 쉼표로
+    return value.some((v) => v && typeof v === "object")
+      ? value.map((v) => formatValue(v).replace(/\n/g, " · ")).join("\n")
+      : value.map(formatScalar).join(", ");
+  }
+  if (typeof value !== "object") return formatScalar(value);
+  const lines = Object.entries(value)
+    .filter(([key, v]) => key !== "id" && v != null && v !== "" && !(Array.isArray(v) && v.length === 0))
+    .map(([key, v]) => {
+      const label = FIELD_LABELS[key] ?? key;
+      const text = typeof v === "object" && !Array.isArray(v) ? formatValue(v).replace(/\n/g, " · ") : formatValue(v);
+      return `${label}: ${text}`;
+    });
+  return lines.length ? lines.join("\n") : "정보 없음";
 }
 
 function getErrorMessage(error) {

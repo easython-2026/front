@@ -87,33 +87,6 @@ function listOf(response, key) {
 }
 
 // 급여 비교 목록 응답 검사
-function comparisonList(response) {
-  const data = unwrap(response);
-
-  if (Array.isArray(data)) {
-    return data;
-  }
-
-  const candidates = [
-    data?.comparisons,
-    data?.content,
-    data?.items,
-    data?.results,
-  ];
-
-  const found = candidates.find(
-    (value) => Array.isArray(value)
-  );
-
-  if (found) {
-    return found;
-  }
-
-  throw new Error(
-    "급여 비교 목록의 응답 형식을 확인할 수 없습니다. 서버 Response 데이터를 확인해 주세요."
-  );
-}
-
 // 실제 비교 ID 확인
 function getComparisonId(item) {
   const id =
@@ -375,15 +348,30 @@ export default function PetitionCreate() {
         // 불필요한 query 파라미터 제거
         // =================================
 
-        const response = await apiRequest(
-          "salary",
-          "getComparisons"
+        // 서버는 월별 상태 API(GET /payroll/comparisons?month=)만 제공하므로
+        // 최근 6개월을 조회해 비교 결과가 있는 달만 모은다.
+        const now = new Date();
+        const months = Array.from({ length: 6 }, (_, i) => {
+          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        });
+        const states = await Promise.all(
+          months.map((month) =>
+            apiRequest("salary", "getComparisons", { query: { month } })
+              .then((res) => unwrap(res))
+              .catch(() => null)
+          )
         );
 
         if (!active) return;
 
-        const allComparisons =
-          comparisonList(response);
+        const allComparisons = states
+          .filter((state) => state?.comparison)
+          .map((state) => ({
+            ...state.comparison,
+            month: state.month,
+            statementId: state.statementId,
+          }));
 
         // 서버에서 확인된 MISMATCH 결과만 표시
         const options =

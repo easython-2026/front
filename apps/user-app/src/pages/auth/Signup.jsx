@@ -323,17 +323,18 @@ export default function Signup() {
         return;
       }
 
-      // 기존 user-app 회원가입 API 형식 유지
+      // POST /auth/signup — { email, password, name, language, consents{privacy, location, camera}, agreedAt }
       await signup({
         email,
         password: form.password,
         name: form.name.trim(),
-        languageCode: form.languageCode,
+        language: form.languageCode,
         consents: {
-          termsOfService: form.agreeTerms,
-          privacyPolicy: form.agreePrivacy,
-          marketing: false,
+          privacy: Boolean(form.agreeTerms && form.agreePrivacy),
+          location: Boolean(form.agreeLocationPhoto),
+          camera: Boolean(form.agreeLocationPhoto),
         },
+        agreedAt: new Date().toISOString(),
       });
 
       navigate("/login", {
