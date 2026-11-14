@@ -74,3 +74,6 @@ export const getAttendanceIssues = () =>
 // AI 이상 패턴 (P1)
 export const getAttendanceAnomalies = () =>
   apiRequest("attendance", "getAnomalies");
+
+// 명세의 POST /api/v1/attendance/records (누락 근무기록 추가).
+export const addManualAttendanceRecord = addAttendanceRecord;

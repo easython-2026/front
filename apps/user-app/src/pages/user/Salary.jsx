@@ -4,12 +4,12 @@ import { Link, useNavigate, useSearchParams } from "react-router";
 
 import {
   getSalaryComparison,
+  getSalaryOverviewForMonth,
   addManualSalary,
   uploadSalaryStatement,
   calculateSalaryComparison,
 } from "../../api/salary";
 
-import { apiRequest } from "../../api/client";
 
 import {
   getMyProfile,
@@ -172,13 +172,8 @@ export default function Salary() {
 
     async function loadSalary() {
       try {
-        const response = await apiRequest(
-          "salary",
-          "getOverview",
-          {
-            query: { month },
-          }
-        );
+        // 명세서: GET /api/v1/payroll/comparisons
+        const response = await getSalaryOverviewForMonth(month);
 
         if (!active) return;
 
@@ -353,7 +348,7 @@ export default function Salary() {
 
   async function startComparison() {
     if (
-      !overview?.statementId ||
+      !(overview?.statementId ?? searchParams.get("statementId")) ||
       busy
     ) {
       return;
@@ -366,7 +361,7 @@ export default function Salary() {
       const result = unwrap(
         await calculateSalaryComparison({
           month,
-          statementId: overview.statementId,
+          statementId: overview?.statementId ?? searchParams.get("statementId"),
         })
       );
 
@@ -816,23 +811,24 @@ export default function Salary() {
           </button>
         </div>
 
-        {overview?.statementId && (
+        {(overview?.statementId || searchParams.get("statementId")) && (
           <Link
             className="efin-text-link"
             to={`/salary/statements/${encodeURIComponent(
-              overview.statementId
+              overview?.statementId ?? searchParams.get("statementId")
             )}`}
           >
             등록한 급여명세서 검토·확정
           </Link>
         )}
 
-        {overview?.status === "READY" && (
+        {(overview?.statementId || searchParams.get("statementId")) &&
+          !isCompared && (
           <button
             type="button"
             className="efin-main-button"
             disabled={
-              busy || !overview.statementId
+              busy || !(overview?.statementId || searchParams.get("statementId"))
             }
             onClick={startComparison}
           >
@@ -842,11 +838,11 @@ export default function Salary() {
           </button>
         )}
 
-        {comparison?.id && (
+        {(comparison?.id ?? comparison?.comparisonId) != null && (
           <Link
             className="efin-text-link"
             to={`/salary/${encodeURIComponent(
-              comparison.id
+              comparison.id ?? comparison.comparisonId
             )}`}
           >
             상세 비교 결과 확인

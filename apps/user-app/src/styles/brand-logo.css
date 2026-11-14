@@ -1,52 +1,61 @@
 
-/* 브랜드 심볼 + 글자 로고 가로 정렬 */
-
+/* 일한만큼: 왼쪽 심볼 + 오른쪽 글자 SVG */
 .brand-logo {
   display: inline-flex;
   flex-direction: row;
   align-items: center;
   justify-content: flex-start;
   flex-wrap: nowrap;
-
-  gap: 7px;
-
-  width: max-content;
-  max-width: 100%;
+  gap: 8px;
   min-width: 0;
-  flex-shrink: 0;
+  max-width: 100%;
+  vertical-align: middle;
+  line-height: 0;
 }
 
 .brand-logo img {
   display: block;
-  max-width: none;
-  object-fit: contain;
   flex-shrink: 0;
+  object-fit: contain;
+  max-width: none;
 }
 
 /* 홈 상단바 */
-
 .brand-logo--header .brand-logo__symbol {
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
 }
 
 .brand-logo--header .brand-logo__text {
-  width: 110px;
+  width: 126px;
   height: auto;
+  max-height: 37px;
 }
 
-/* 온보딩 화면 */
-
+/* 온보딩 */
 .brand-logo--intro {
   gap: 10px;
 }
 
 .brand-logo--intro .brand-logo__symbol {
-  width: 54px;
-  height: 54px;
+  width: 48px;
+  height: 48px;
 }
 
 .brand-logo--intro .brand-logo__text {
-  width: 144px;
+  width: 150px;
   height: auto;
+  max-height: 44px;
+}
+
+/* 작은 휴대전화 */
+@media (max-width: 350px) {
+  .brand-logo--header .brand-logo__symbol {
+    width: 36px;
+    height: 36px;
+  }
+
+  .brand-logo--header .brand-logo__text {
+    width: 108px;
+  }
 }

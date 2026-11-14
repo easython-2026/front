@@ -1,34 +1,33 @@
 
 import symbolLogo from "../assets/images/symbol_logo.svg";
 import symbolText from "../assets/images/symbol_text.svg";
-
 import "../styles/brand-logo.css";
 
-export default function BrandLogo({
-  size = "header",
-}) {
-  const variant =
-    size === "intro" ? "intro" : "header";
+/**
+ * 동일한 SVG 파일을 홈과 온보딩에서 재사용합니다.
+ * 왼쪽: 심볼 / 오른쪽: '일한만큼' 글자 로고
+ */
+export default function BrandLogo({ size = "header" }) {
+  const variant = size === "intro" ? "intro" : "header";
 
   return (
-    <div
+    <span
       className={`brand-logo brand-logo--${variant}`}
       role="img"
       aria-label="일한만큼"
     >
       <img
-        className="brand-logo__symbol"
         src={symbolLogo}
         alt=""
-        draggable="false"
+        className="brand-logo__symbol"
+        draggable={false}
       />
-
       <img
-        className="brand-logo__text"
         src={symbolText}
         alt=""
-        draggable="false"
+        className="brand-logo__text"
+        draggable={false}
       />
-    </div>
+    </span>
   );
 }

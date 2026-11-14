@@ -1,6 +1,7 @@
 
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
+import { calculateSalaryComparison } from "../../api/salary";
 
 import { apiRequest } from "../../api/client";
 
@@ -73,6 +74,8 @@ function parseAmount(value) {
 
 export default function SalaryStatement() {
   const { statementId } = useParams();
+  const navigate = useNavigate();
+  const [comparing, setComparing] = useState(false);
 
   const [statement, setStatement] = useState(null);
 
@@ -301,6 +304,26 @@ export default function SalaryStatement() {
       setError(getErrorMessage(err));
     } finally {
       setConfirming(false);
+    }
+  }
+
+  // 명세의 POST /api/v1/payroll/comparisons 이용.
+  // GET /payroll/overview는 명세에 없으므로 확정된 명세서 ID로 직접 비교한다.
+  async function handleCompare() {
+    if (!confirmed || comparing || !isValidMonth(month) || !statementId) return;
+    setComparing(true);
+    setError("");
+    try {
+      const response = unwrap(await calculateSalaryComparison({ month, statementId }));
+      const comparisonId = response?.comparisonId ?? response?.id;
+      if (comparisonId == null || comparisonId === "") {
+        throw new Error("비교 요청 응답에 comparisonId가 없습니다. 비교 목록에서 생성 여부를 확인해 주세요.");
+      }
+      navigate(`/salary/${encodeURIComponent(comparisonId)}`);
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setComparing(false);
     }
   }
 
@@ -549,11 +572,12 @@ export default function SalaryStatement() {
               </button>
 
               {confirmed && (
-                <p>
-                  급여명세서가 확정되었습니다.
-                  이제 해당 월의 임금 비교를
-                  진행할 수 있습니다.
-                </p>
+                <>
+                  <p>급여명세서가 확정되었습니다. 해당 월의 임금을 비교할 수 있어요.</p>
+                  <button type="button" onClick={handleCompare} disabled={comparing}>
+                    {comparing ? "비교 요청 중..." : "예상 임금과 실제 지급액 비교"}
+                  </button>
+                </>
               )}
             </section>
           )}
@@ -582,7 +606,7 @@ export default function SalaryStatement() {
       )}
 
       <p style={{ marginTop: 32 }}>
-        <Link to="/salary">
+        <Link to={`/salary?month=${encodeURIComponent(month)}&statementId=${encodeURIComponent(statementId)}`}>
           급여 관리 및 임금 비교로 이동
         </Link>
       </p>

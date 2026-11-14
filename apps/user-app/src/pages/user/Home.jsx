@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router";
 
 import { apiRequest } from "../../api/client";
+import { getSalaryOverviewForMonth } from "../../api/salary";
 import BrandLogo from "../../components/BrandLogo";
 
 const labels = {
@@ -226,8 +227,7 @@ export default function Home() {
         }),
 
       salary: () =>
-        apiRequest("salary", "getOverview", {
-          query: { month },
+        getSalaryOverviewForMonth(month, {
           signal: controller.signal,
         }),
 

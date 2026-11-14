@@ -268,7 +268,7 @@ export const ENDPOINTS = {
     // 사후 수동 근무기록 등록
     addManualRecord: {
       method: "POST",
-      path: `${API}/attendance/manual`,
+      path: `${API}/attendance/records`,
     },
   },
 
@@ -277,12 +277,6 @@ export const ENDPOINTS = {
   // ========================================
 
   salary: {
-    // 선택 월 급여 상태
-    getOverview: {
-      method: "GET",
-      path: `${API}/payroll/overview`,
-    },
-
     // 급여명세서 파일 업로드
     uploadStatement: {
       method: "POST",
@@ -440,9 +434,9 @@ export const ENDPOINTS = {
     },
 
     // 알림 읽음 처리
-    // API 명세 기준 POST
+    // API 명세 기준 PATCH
     markAsRead: {
-      method: "POST",
+      method: "PATCH",
       path: `${API}/notifications/{notificationId}/read`,
     },
   },

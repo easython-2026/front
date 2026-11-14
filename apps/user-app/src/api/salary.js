@@ -1,3 +1,4 @@
+import { payrollOverviewFromComparisons } from "../utils/payrollComparisons";
 // 급여명세서 & 급여 비교
 
 
@@ -32,10 +33,18 @@ export const addManualSalary = (data) =>
   });
 
 // 월별 급여 비교 현황
-export const getSalaryComparisons = (query = {}) =>
+export const getSalaryComparisons = (query = {}, options = {}) =>
   apiRequest("salary", "getComparisons", {
     query,
+    ...options,
   });
+
+// 실제 목록 API를 사용한다.
+// 페이지/size 파라미터는 요청 스키마가 확인되지 않아 추가하지 않는다.
+export async function getSalaryOverviewForMonth(month, options = {}) {
+  const response = await getSalaryComparisons({}, options);
+  return payrollOverviewFromComparisons(response, month);
+}
 
 // 예상 임금 계산 및 지급액 비교
 export const calculateSalaryComparison = (data) =>

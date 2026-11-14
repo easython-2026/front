@@ -26,12 +26,6 @@ export default function PaydayPopup() {
           "notification",
           "getList",
           {
-            query: {
-              popupOnly: true,
-              unreadOnly: true,
-              page: 1,
-              size: 100,
-            },
             signal: controller.signal,
           }
         );
